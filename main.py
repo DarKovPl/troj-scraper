@@ -1,9 +1,19 @@
-import parsers
-from threading import Event
-if __name__ == '__main__':
+from parsers import UrlParser, Links
 
-     print(parsers.bs)
-     Event().wait(5)
-     print('%' * 1700)
-     print(parsers.bs_1)
-#import wdb; wdb.set_trace()
+
+def main():
+    links = Links.get_links_from_env(Links('./.env'))
+    import wdb;
+
+    wdb.set_trace()
+    for link in links:
+        page_content = UrlParser(link).get_html_data()
+        print('Start ' * 400)
+        print(page_content)
+        print('%' * 1700)
+
+
+if __name__ == '__main__':
+    main()
+
+# import wdb; wdb.set_trace()

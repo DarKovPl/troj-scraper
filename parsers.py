@@ -1,13 +1,29 @@
 from bs4 import BeautifulSoup
 from environs import Env
 from requests import get
+from threading import Event
 
-env = Env()
-env.read_env('./.env')
 
-page = get(env.json('URL_ADDRESSES')['ACCOMMODATION'])
-bs = BeautifulSoup(page.content, 'html.parser')
+class Links:
 
-page = get(env.json('URL_ADDRESSES')['I_WILL_BUY'])
-bs_1 = BeautifulSoup(page.content, 'html.parser')
+    def __init__(self, env_path: str):
+        self.env_path = env_path
+        self.env = Env()
 
+    def get_links_from_env(self):
+        self.env.read_env(self.env_path)
+        url_dict = self.env.json('URL_ADDRESSES')
+        urls = (url for url in url_dict.values())
+        for url in urls:
+            yield url
+
+
+class UrlParser:
+    def __init__(self, url):
+        self.url = url
+
+    def get_html_data(self):
+        page = get(self.url)
+        bs = BeautifulSoup(page.content, "html.parser")
+        Event().wait(10)
+        return bs
