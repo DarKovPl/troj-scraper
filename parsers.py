@@ -1,8 +1,7 @@
 from bs4 import BeautifulSoup
 from environs import Env
 from requests import get
-from threading import Event
-from lxml import html
+
 
 class Links:
 
@@ -20,22 +19,21 @@ class Links:
 
 class UrlRequests:
 
-    def __init__(self, url, headers='', cookies=''):
+    def __init__(self, url: str, headers='', cookies=''):
         self.url = url
         self.headers = headers
         self.cookies = cookies
 
-    def get_request(self):
+    def get_content(self):
         response = get(self.url)
-        return response
+        return response.content
 
 
 class DataParser:
-    def __init__(self, bytes_data):
-        self.bytes_data = bytes_data
+    def __init__(self, data: bytes):
+        self.data = data
 
     def get_html_data(self):
-        bs = BeautifulSoup(self.bytes_data, 'lxml')
-        Event().wait(10)
-        return bs.decode(pretty_print=True)
-
+        bs = BeautifulSoup(self.data, "lxml")
+        # import wdb; wdb.set_trace()
+        return bs.prettify()
