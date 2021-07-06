@@ -3,17 +3,24 @@ from threading import Event
 
 
 def main():
-    for server_response in UrlRequest().get_content():
-        page_content = DataParser(server_response[0]).get_html_data()
-        request_header = server_response[1]
-        response_cookies = server_response[2]
+    for page in UrlRequest().get_content():
+        request_header = page.request.headers
+        response_cookies = page.cookies
+        response_headers = page.headers
+        response_link = page.url
 
-        print('Start ' * 400)
+        print('Start ' * 70)
         # print(page_content)
+        print(response_link)
+        print('------------------')
         print(request_header)
+        print('------------------')
         print(response_cookies)
-        print('%' * 1700)
-
+        print('------------------')
+        print(response_headers)
+        print()
+        print('%' * 400)
+        Event().wait(5)
 
 if __name__ == '__main__':
     main()

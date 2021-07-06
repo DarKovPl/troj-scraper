@@ -144,5 +144,6 @@ cython_debug/
 media
 static
 
-# My temporary file
+# My temporary file and directories
+proxy_file/
 temporary.py
