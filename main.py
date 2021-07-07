@@ -4,20 +4,22 @@ from threading import Event
 
 def main():
     for page in UrlRequest().get_content():
+        page_content = DataParser(page.content).get_html_data()
         request_header = page.request.headers
         response_cookies = page.cookies
         response_headers = page.headers
         response_link = page.url
 
         print('Start ' * 70)
-        # print(page_content)
-        print(response_link)
+        print("Page content", page_content)
         print('------------------')
-        print(request_header)
+        print("Response link", response_link)
         print('------------------')
-        print(response_cookies)
+        print("Request header", request_header)
         print('------------------')
-        print(response_headers)
+        print("Response cookie", response_cookies)
+        print('------------------')
+        print("Response headers", response_headers)
         print()
         print('%' * 400)
         Event().wait(5)

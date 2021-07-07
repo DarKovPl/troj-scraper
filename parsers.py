@@ -14,21 +14,26 @@ class RequestParameters:
         self.session = Session()
         self.request = Request
         self.proxies_file_path = 'proxy_file/proxies.txt'
-        self.proxies = {
-            '0': {'Proxy Address': 0,
-                  'Port': 0,
-                  'Username': 0,
-                  'Password': 0
-                  }
-        }
+        self.proxies = {'0': {'Proxy Address': 0,
+                              'Port': 0,
+                              'Username': 0,
+                              'Password': 0
+                              }
+                        }
         self.url_header_proxy = {}
-        self.set_header_proxy_for_request()
-
-    def get_links_from_env(self):
+        self.set_url_header_proxy_for_request()
+        self.mix_urls_for_fake_activity()
+    def get_main_categories_urls(self):
         self.env.read_env(self.env_path)
-        url_dict = self.env.json('URL_ADDRESSES')
-        urls = (url for url in url_dict.values())
-        return urls
+        main_categories_urls_dict = self.env.json('MAIN_CATEGORIES_URL')
+        main_categories = (url for url in main_categories_urls_dict.values())
+        return main_categories
+
+    def get_user_activity_urls(self):
+        self.env.read_env(self.env_path)
+        user_activity_urls_dict = self.env.json('START_USER_ACTIVITY')
+        user_activity = (url for url in user_activity_urls_dict.values())
+        return user_activity
 
     def get_user_agent_header(self):
         random_header = {'User-Agent': self.user_agent.random}
@@ -42,48 +47,39 @@ class RequestParameters:
                 self.proxies.update({str(i): {key: value for key, value in zip(self.proxies['0'].keys(), proxy_setup)}})
             return self.proxies
 
-    def set_header_proxy_for_request(self):
+    def mix_urls_for_fake_activity(self):
         import wdb;
         wdb.set_trace()
-        for i, link in enumerate(self.get_links_from_env()):
-            i = str(i)
-            self.url_header_proxy.update({f"{i}": {"url": link,
-                                                   "header": self.get_user_agent_header(),
-                                                   "http": f"http://{self.get_proxies_from_file()[i]['Username']}:"
-                                                           f"{self.get_proxies_from_file()[i]['Password']}@"
-                                                           f"{self.get_proxies_from_file()[i]['Proxy Address']}:"
-                                                           f"{self.get_proxies_from_file()[i]['Port']}"
-                                                   }
+        urls_start_list = [url for url in self.get_user_activity_urls()]
+
+
+    def set_url_header_proxy_for_request(self):
+        for key in self.get_proxies_from_file():
+            self.url_header_proxy.update({f"{key}": {"urls": [url for url in self.get_user_activity_urls()],
+                                                     "header": self.get_user_agent_header(),
+                                                     "http": f"http://{self.proxies[key]['Username']}:"
+                                                             f"{self.proxies[key]['Password']}@"
+                                                             f"{self.proxies[key]['Proxy Address']}:"
+                                                             f"{self.proxies[key]['Port']}"
+                                                     }
                                           })
 
 
 class UrlRequest(RequestParameters):
 
-    # def get_response_from_main_page(self):
-    #     main_page_request = self.request(
-    #         self.set_proxy_for_request_url()['0']["url"],
-    #         headers=self.set_proxy_for_request_url()['0']["header"],
-    #     )
-    #     return main_page_request
+    # def create_user_fake_activity(self):
 
     def get_content(self):
-
+        # import wdb;
+        # wdb.set_trace()
         for key in self.url_header_proxy:
-            # import wdb;
-            # wdb.set_trace()
-            # first_request = session.request('GET', self.set_proxy_for_request_url()['0']["url"],
-            #                                 headers=self.set_proxy_for_request_url()['0']["header"],
-            #                                 proxies=self.set_proxy_for_request_url()['0'])
-            # first_prepped = session.prepare_request(first_request)
-            # resp = session.send(first_prepped, proxies=self.set_proxy_for_request_url()['0'])
-
-            request = self.request('GET', self.url_header_proxy[key]['url'],
-                                   headers=self.url_header_proxy['0']['header'])
-
-            prepped = self.session.prepare_request(request)
-            response = self.session.send(prepped,
-                                         proxies=self.url_header_proxy['0'])
-            yield response
+            session = self.session
+            session.cookies.clear()
+            for link in self.url_header_proxy[key]['urls']:
+                request = self.request('GET', link, headers=self.url_header_proxy[key]['header'])
+                prepped = session.prepare_request(request)
+                response = session.send(prepped, proxies=self.url_header_proxy[key])
+                yield response
 
 
 class DataParser:
