@@ -5,7 +5,30 @@ from fake_useragent import UserAgent
 from threading import Event
 
 
-class RequestParameters:
+class DataParser:
+    def __init__(self, data: bytes):
+        self.data = data
+
+    def get_html_data(self):
+        soup = BeautifulSoup(self.data, "lxml")
+        # import wdb; wdb.set_trace()
+        return soup.prettify()
+
+    def get_start_url_property(self):
+        soup = BeautifulSoup(self.data, "lxml")
+        property_advert = soup.find('div', class_='section__ogl section__ogl--nieruchomosci')
+        sorted_ = []
+        for content in property_advert.findAll('div', class_='front__ogl__content'):
+            url = [content.find('a')['href']]
+            price = content.find('p', class_='front__ogl__price__value')
+            sorted_ += [(url, price) for url, price in zip(url, price)]
+        sorted_ = sorted(sorted_, key=lambda i: i[1])
+        sorted_.reverse()
+        best_offer = sorted_[0][0]
+        return best_offer
+
+
+class RequestParameters(DataParser):
 
     def __init__(self):
         self.env_path = '.env'
@@ -22,7 +45,7 @@ class RequestParameters:
                         }
         self.url_header_proxy = {}
         self.set_url_header_proxy_for_request()
-        self.mix_urls_for_fake_activity()
+
     def get_main_categories_urls(self):
         self.env.read_env(self.env_path)
         main_categories_urls_dict = self.env.json('MAIN_CATEGORIES_URL')
@@ -47,15 +70,15 @@ class RequestParameters:
                 self.proxies.update({str(i): {key: value for key, value in zip(self.proxies['0'].keys(), proxy_setup)}})
             return self.proxies
 
-    def mix_urls_for_fake_activity(self):
+    def mix_urls_for_fake_activity(self, gotten_urls):
         import wdb;
         wdb.set_trace()
-        urls_start_list = [url for url in self.get_user_activity_urls()]
-
+        urls_start_list = [url for url in zip(self.get_user_activity_urls(), gotten_urls)]
+        return urls_start_list
 
     def set_url_header_proxy_for_request(self):
         for key in self.get_proxies_from_file():
-            self.url_header_proxy.update({f"{key}": {"urls": [url for url in self.get_user_activity_urls()],
+            self.url_header_proxy.update({f"{key}": {"urls": [url for url in self.mix_urls_for_fake_activity(self.get_start_url_property())],
                                                      "header": self.get_user_agent_header(),
                                                      "http": f"http://{self.proxies[key]['Username']}:"
                                                              f"{self.proxies[key]['Password']}@"
@@ -80,13 +103,3 @@ class UrlRequest(RequestParameters):
                 prepped = session.prepare_request(request)
                 response = session.send(prepped, proxies=self.url_header_proxy[key])
                 yield response
-
-
-class DataParser:
-    def __init__(self, data: bytes):
-        self.data = data
-
-    def get_html_data(self):
-        bs = BeautifulSoup(self.data, "lxml")
-        # import wdb; wdb.set_trace()
-        return bs.prettify()

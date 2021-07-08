@@ -3,8 +3,9 @@ from threading import Event
 
 
 def main():
+
     for page in UrlRequest().get_content():
-        page_content = DataParser(page.content).get_html_data()
+        page_content = DataParser(page.content).get_start_url_property()
         request_header = page.request.headers
         response_cookies = page.cookies
         response_headers = page.headers
@@ -23,6 +24,7 @@ def main():
         print()
         print('%' * 400)
         Event().wait(5)
+
 
 if __name__ == '__main__':
     main()
