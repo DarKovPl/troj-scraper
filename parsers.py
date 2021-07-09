@@ -3,32 +3,11 @@ from environs import Env
 from requests import Session, Request
 from fake_useragent import UserAgent
 from threading import Event
+import re
+import random
 
 
-class DataParser:
-    def __init__(self, data: bytes):
-        self.data = data
-
-    def get_html_data(self):
-        soup = BeautifulSoup(self.data, "lxml")
-        # import wdb; wdb.set_trace()
-        return soup.prettify()
-
-    def get_start_url_property(self):
-        soup = BeautifulSoup(self.data, "lxml")
-        property_advert = soup.find('div', class_='section__ogl section__ogl--nieruchomosci')
-        sorted_ = []
-        for content in property_advert.findAll('div', class_='front__ogl__content'):
-            url = [content.find('a')['href']]
-            price = content.find('p', class_='front__ogl__price__value')
-            sorted_ += [(url, price) for url, price in zip(url, price)]
-        sorted_ = sorted(sorted_, key=lambda i: i[1])
-        sorted_.reverse()
-        best_offer = sorted_[0][0]
-        return best_offer
-
-
-class RequestParameters(DataParser):
+class RequestParameters:
 
     def __init__(self):
         self.env_path = '.env'
@@ -44,7 +23,7 @@ class RequestParameters(DataParser):
                               }
                         }
         self.url_header_proxy = {}
-        self.set_url_header_proxy_for_request()
+        self.set_start_activity_url()
 
     def get_main_categories_urls(self):
         self.env.read_env(self.env_path)
@@ -52,7 +31,7 @@ class RequestParameters(DataParser):
         main_categories = (url for url in main_categories_urls_dict.values())
         return main_categories
 
-    def get_user_activity_urls(self):
+    def get_main_user_activity_url(self):
         self.env.read_env(self.env_path)
         user_activity_urls_dict = self.env.json('START_USER_ACTIVITY')
         user_activity = (url for url in user_activity_urls_dict.values())
@@ -70,22 +49,40 @@ class RequestParameters(DataParser):
                 self.proxies.update({str(i): {key: value for key, value in zip(self.proxies['0'].keys(), proxy_setup)}})
             return self.proxies
 
-    def mix_urls_for_fake_activity(self, gotten_urls):
+    # def mix_urls_for_fake_activity(self, urls):
+    #     # import wdb;
+    #     # wdb.set_trace()
+    #     urls_start_list = [url for url in urls]
+    #     return urls_start_list
+
+    def set_start_activity_url(self):
+        for key in self.get_proxies_from_file():
+            self.url_header_proxy.update(
+                {f"{key}": {"urls": [url for url in self.get_main_user_activity_url()],
+                            "header": self.get_user_agent_header(),
+                            "http": f"http://{self.proxies[key]['Username']}:"
+                                    f"{self.proxies[key]['Password']}@"
+                                    f"{self.proxies[key]['Proxy Address']}:"
+                                    f"{self.proxies[key]['Port']}"
+                            }
+                 })
+            break
+
+    def set_url_header_proxy_for_request(self, urls):
         import wdb;
         wdb.set_trace()
-        urls_start_list = [url for url in zip(self.get_user_activity_urls(), gotten_urls)]
-        return urls_start_list
-
-    def set_url_header_proxy_for_request(self):
+        zipped = list(map(lambda e: (e, next(iter(self.get_main_user_activity_url()))), urls))
+        tuple_unpack = [b for a in zipped for b in a]
         for key in self.get_proxies_from_file():
-            self.url_header_proxy.update({f"{key}": {"urls": [url for url in self.mix_urls_for_fake_activity(self.get_start_url_property())],
-                                                     "header": self.get_user_agent_header(),
-                                                     "http": f"http://{self.proxies[key]['Username']}:"
-                                                             f"{self.proxies[key]['Password']}@"
-                                                             f"{self.proxies[key]['Proxy Address']}:"
-                                                             f"{self.proxies[key]['Port']}"
-                                                     }
-                                          })
+            self.url_header_proxy.update(
+                {f"{key}": {"urls":  tuple_unpack,
+                            "header": self.get_user_agent_header(),
+                            "http": f"http://{self.proxies[key]['Username']}:"
+                                    f"{self.proxies[key]['Password']}@"
+                                    f"{self.proxies[key]['Proxy Address']}:"
+                                    f"{self.proxies[key]['Port']}"
+                            }
+                 })
 
 
 class UrlRequest(RequestParameters):
@@ -93,8 +90,6 @@ class UrlRequest(RequestParameters):
     # def create_user_fake_activity(self):
 
     def get_content(self):
-        # import wdb;
-        # wdb.set_trace()
         for key in self.url_header_proxy:
             session = self.session
             session.cookies.clear()
@@ -103,3 +98,25 @@ class UrlRequest(RequestParameters):
                 prepped = session.prepare_request(request)
                 response = session.send(prepped, proxies=self.url_header_proxy[key])
                 yield response
+
+
+class DataParser:
+    def __init__(self, data: bytes):
+        self.data = data
+
+    def get_html_data(self):
+        soup = BeautifulSoup(self.data, "lxml")
+        return soup.prettify()
+
+    def get_start_urls_for_activity(self):
+        soup = BeautifulSoup(self.data, "lxml")
+        all_advert = soup.find('div', class_='section-content')
+        urls = []
+        for container in all_advert.findAll('div', class_='section__container'):
+            for section in container.findAll('div', class_=re.compile("section__ogl section__ogl")):
+                for content in section.findAll('div', class_='front__ogl__content__title'):
+                    url = [content.find('a')['href']]
+                    urls.extend(url)
+        number = random.randrange(3, 6)
+        random_urls = random.sample(urls, number)
+        return random_urls

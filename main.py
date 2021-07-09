@@ -1,11 +1,13 @@
-from parsers import DataParser, UrlRequest
+from parsers import DataParser, UrlRequest, RequestParameters
 from threading import Event
 
 
 def main():
-
     for page in UrlRequest().get_content():
-        page_content = DataParser(page.content).get_start_url_property()
+
+        page_content = DataParser(page.content).get_start_urls_for_activity()
+        RequestParameters().set_url_header_proxy_for_request(page_content)
+
         request_header = page.request.headers
         response_cookies = page.cookies
         response_headers = page.headers
