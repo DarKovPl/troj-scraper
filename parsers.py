@@ -31,11 +31,15 @@ class RequestParameters:
         main_categories = (url for url in main_categories_urls_dict.values())
         return main_categories
 
-    def get_main_user_activity_url(self):
+    def get_beginning_user_activity_url(self):
         self.env.read_env(self.env_path)
-        user_activity_urls_dict = self.env.json('START_USER_ACTIVITY')
-        user_activity = (url for url in user_activity_urls_dict.values())
-        return user_activity
+        user_activity_url = self.env.list('START_USER_ACTIVITY')
+        return user_activity_url
+
+    def get_main_category_estates_url(self):
+        self.env.read_env(self.env_path)
+        main_category_url = self.env.list('MAIN_CATEGORY_ESTATES')
+        return main_category_url
 
     def get_user_agent_header(self):
         random_header = {'User-Agent': self.user_agent.random}
@@ -49,16 +53,10 @@ class RequestParameters:
                 self.proxies.update({str(i): {key: value for key, value in zip(self.proxies['0'].keys(), proxy_setup)}})
             return self.proxies
 
-    # def mix_urls_for_fake_activity(self, urls):
-    #     # import wdb;
-    #     # wdb.set_trace()
-    #     urls_start_list = [url for url in urls]
-    #     return urls_start_list
-
     def set_start_activity_url(self):
-        for key in self.get_proxies_from_file():
+        for key in sorted(list(self.get_proxies_from_file())[1:], key=lambda x:  random.random()):
             self.url_header_proxy.update(
-                {f"{key}": {"urls": [url for url in self.get_main_user_activity_url()],
+                {f"{key}": {"urls": self.get_beginning_user_activity_url(),
                             "header": self.get_user_agent_header(),
                             "http": f"http://{self.proxies[key]['Username']}:"
                                     f"{self.proxies[key]['Password']}@"
@@ -68,14 +66,15 @@ class RequestParameters:
                  })
             break
 
-    def set_url_header_proxy_for_request(self, urls):
+    def set_urls_headers_proxies_for_requests(self, urls):
         import wdb;
         wdb.set_trace()
-        zipped = list(map(lambda e: (e, next(iter(self.get_main_user_activity_url()))), urls))
-        tuple_unpack = [b for a in zipped for b in a]
+        to_by_turns = list(map(lambda e: (e, self.get_beginning_user_activity_url()[0]), urls))
+        by_turns_list_urls = [url for tup_set in to_by_turns for url in tup_set]
+        by_turns_list_urls.reverse()
         for key in self.get_proxies_from_file():
             self.url_header_proxy.update(
-                {f"{key}": {"urls":  tuple_unpack,
+                {f"{key}": {"urls":  by_turns_list_urls,
                             "header": self.get_user_agent_header(),
                             "http": f"http://{self.proxies[key]['Username']}:"
                                     f"{self.proxies[key]['Password']}@"
@@ -83,11 +82,10 @@ class RequestParameters:
                                     f"{self.proxies[key]['Port']}"
                             }
                  })
+        return self.url_header_proxy
 
 
 class UrlRequest(RequestParameters):
-
-    # def create_user_fake_activity(self):
 
     def get_content(self):
         for key in self.url_header_proxy:
