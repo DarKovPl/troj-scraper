@@ -23,23 +23,18 @@ class RequestParameters:
                               }
                         }
         self.url_header_proxy = {}
-        self.set_start_activity_url()
+        self.urls_list = []
+        self.set_start_activity_parameters()
 
-    def get_main_categories_urls(self):
+    def get_main_page_url(self):
         self.env.read_env(self.env_path)
-        main_categories_urls_dict = self.env.json('MAIN_CATEGORIES_URL')
-        main_categories = (url for url in main_categories_urls_dict.values())
-        return main_categories
+        main_page_url = self.env.list('MAIN_PAGE_URL')
+        return main_page_url
 
-    def get_beginning_user_activity_url(self):
+    def get_main_category_endpoint(self):
         self.env.read_env(self.env_path)
-        user_activity_url = self.env.list('START_USER_ACTIVITY')
-        return user_activity_url
-
-    def get_main_category_estates_url(self):
-        self.env.read_env(self.env_path)
-        main_category_url = self.env.list('MAIN_CATEGORY_ESTATES')
-        return main_category_url
+        main_category_endpoint = self.env.list('MAIN_CATEGORY_ENDPOINT')
+        return main_category_endpoint
 
     def get_user_agent_header(self):
         random_header = {'User-Agent': self.user_agent.random}
@@ -53,10 +48,10 @@ class RequestParameters:
                 self.proxies.update({str(i): {key: value for key, value in zip(self.proxies['0'].keys(), proxy_setup)}})
             return self.proxies
 
-    def set_start_activity_url(self):
+    def set_start_activity_parameters(self):
         for key in sorted(list(self.get_proxies_from_file())[1:], key=lambda x:  random.random()):
             self.url_header_proxy.update(
-                {f"{key}": {"urls": self.get_beginning_user_activity_url(),
+                {f"{key}": {"urls": self.get_main_page_url() + self.get_main_category_endpoint(),
                             "header": self.get_user_agent_header(),
                             "http": f"http://{self.proxies[key]['Username']}:"
                                     f"{self.proxies[key]['Password']}@"
@@ -64,17 +59,24 @@ class RequestParameters:
                                     f"{self.proxies[key]['Port']}"
                             }
                  })
+            self.proxies.pop(key)
             break
 
-    def set_urls_headers_proxies_for_requests(self, urls):
-        import wdb;
-        wdb.set_trace()
-        to_by_turns = list(map(lambda e: (e, self.get_beginning_user_activity_url()[0]), urls))
+    def build_urls_list(self, urls, number):
+        to_by_turns = list(map(lambda e: (e, self.get_main_page_url()[0]), urls))
         by_turns_list_urls = [url for tup_set in to_by_turns for url in tup_set]
         by_turns_list_urls.reverse()
-        for key in self.get_proxies_from_file():
+        last_urls = self.get_main_page_url() + self.get_main_category_endpoint() + [self.get_main_category_endpoint()[0] + 'o1,1.html']
+        by_turns_list_urls.extend(last_urls)
+        self.urls_list.extend(by_turns_list_urls)
+
+    def set_urls_headers_proxies_for_requests(self):
+        import wdb;
+        wdb.set_trace()
+
+        for key in self.proxies:
             self.url_header_proxy.update(
-                {f"{key}": {"urls":  by_turns_list_urls,
+                {f"{key}": {"urls":  self.urls_list,
                             "header": self.get_user_agent_header(),
                             "http": f"http://{self.proxies[key]['Username']}:"
                                     f"{self.proxies[key]['Password']}@"
@@ -100,21 +102,20 @@ class UrlRequest(RequestParameters):
 
 class DataParser:
     def __init__(self, data: bytes):
-        self.data = data
+        self.soup = BeautifulSoup(data, "lxml")
 
-    def get_html_data(self):
-        soup = BeautifulSoup(self.data, "lxml")
-        return soup.prettify()
-
-    def get_start_urls_for_activity(self):
-        soup = BeautifulSoup(self.data, "lxml")
-        all_advert = soup.find('div', class_='section-content')
+    def get_start_activity_urls_from_main_page(self):
+        all_advert = self.soup.find('div', class_='section-content')
         urls = []
         for container in all_advert.findAll('div', class_='section__container'):
             for section in container.findAll('div', class_=re.compile("section__ogl section__ogl")):
                 for content in section.findAll('div', class_='front__ogl__content__title'):
                     url = [content.find('a')['href']]
                     urls.extend(url)
-        number = random.randrange(3, 6)
+        number = random.randrange(2, 4)
         random_urls = random.sample(urls, number)
         return random_urls
+
+    def get_last_page_number(self):
+        last_page_number = self.soup.find('a', class_='pages__controls__last')['data-page-number']
+        return last_page_number

@@ -5,9 +5,11 @@ from threading import Event
 def main():
     for page in UrlRequest().get_content():
 
-        page_content = DataParser(page.content).get_start_urls_for_activity()
-        z = RequestParameters().set_urls_headers_proxies_for_requests(page_content)
-        print(z.get_content())
+        page_content_for_urls = DataParser(page.content).get_start_activity_urls_from_main_page()
+        page_content_last_page_number = DataParser(page.content).get_last_page_number()
+        RequestParameters().build_urls_list(page_content_for_urls, page_content_last_page_number)
+
+
 
         # request_header = page.request.headers
         # response_cookies = page.cookies
