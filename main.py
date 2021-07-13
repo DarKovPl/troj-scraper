@@ -5,9 +5,13 @@ from threading import Event
 def main():
     for page in UrlRequest().get_content():
 
-        page_content_for_urls = DataParser(page.content).get_start_activity_urls_from_main_page()
-        page_content_last_page_number = DataParser(page.content).get_last_page_number()
-        RequestParameters().build_urls_list(page_content_for_urls, page_content_last_page_number)
+        if page.url == RequestParameters().get_main_page_url()[0]:
+            page_urls = DataParser(page.content).get_start_activity_urls_from_main_page()
+            RequestParameters().build_start_urls_list(page_urls)
+
+        elif page.url == RequestParameters().get_main_category_endpoint()[0]:
+            last_page_number = DataParser(page.content).get_last_page_number()
+            RequestParameters().build_page_range_list(int(last_page_number))
 
 
 

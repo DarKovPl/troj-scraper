@@ -16,6 +16,7 @@ class RequestParameters:
         self.session = Session()
         self.request = Request
         self.proxies_file_path = 'proxy_file/proxies.txt'
+        self.page_filters = ['o1,1.html', '?strona=']
         self.proxies = {'0': {'Proxy Address': 0,
                               'Port': 0,
                               'Username': 0,
@@ -26,21 +27,21 @@ class RequestParameters:
         self.urls_list = []
         self.set_start_activity_parameters()
 
-    def get_main_page_url(self):
+    def get_main_page_url(self) -> list:
         self.env.read_env(self.env_path)
         main_page_url = self.env.list('MAIN_PAGE_URL')
         return main_page_url
 
-    def get_main_category_endpoint(self):
+    def get_main_category_endpoint(self) -> list:
         self.env.read_env(self.env_path)
         main_category_endpoint = self.env.list('MAIN_CATEGORY_ENDPOINT')
         return main_category_endpoint
 
-    def get_user_agent_header(self):
+    def get_user_agent_header(self) -> dict:
         random_header = {'User-Agent': self.user_agent.random}
         return random_header
 
-    def get_proxies_from_file(self):
+    def get_proxies_from_file(self) -> dict:
         with open(self.proxies_file_path, 'r') as file:
             for i, line in enumerate(file.readlines()):
                 line = line.rstrip('\n')
@@ -49,7 +50,7 @@ class RequestParameters:
             return self.proxies
 
     def set_start_activity_parameters(self):
-        for key in sorted(list(self.get_proxies_from_file())[1:], key=lambda x:  random.random()):
+        for key in sorted(list(self.get_proxies_from_file())[1:], key=lambda x: random.random()):
             self.url_header_proxy.update(
                 {f"{key}": {"urls": self.get_main_page_url() + self.get_main_category_endpoint(),
                             "header": self.get_user_agent_header(),
@@ -62,21 +63,34 @@ class RequestParameters:
             self.proxies.pop(key)
             break
 
-    def build_urls_list(self, urls, number):
-        to_by_turns = list(map(lambda e: (e, self.get_main_page_url()[0]), urls))
+    def build_start_urls_list(self, urls_from_main_page: list):
+        to_by_turns = list(map(lambda e: (e, self.get_main_page_url()[0]), urls_from_main_page))
         by_turns_list_urls = [url for tup_set in to_by_turns for url in tup_set]
         by_turns_list_urls.reverse()
-        last_urls = self.get_main_page_url() + self.get_main_category_endpoint() + [self.get_main_category_endpoint()[0] + 'o1,1.html']
+
+        last_urls = self.get_main_page_url() + self.get_main_category_endpoint() + [self.get_main_category_endpoint()[0]
+                                                                                    + self.page_filters[0]]
+
         by_turns_list_urls.extend(last_urls)
         self.urls_list.extend(by_turns_list_urls)
 
-    def set_urls_headers_proxies_for_requests(self):
+    def build_page_range_list(self, number_of_pages: int) -> list:
+        import wdb;
+        wdb.set_trace()
+        pages_creator = [
+            self.get_main_category_endpoint()[0] +
+            ''.join(part_url for part_url in self.page_filters) +
+            str(number) for number in range(number_of_pages + 1)
+        ]
+        return pages_creator
+
+    def set_urls_headers_proxies_for_requests(self) -> dict:
         import wdb;
         wdb.set_trace()
 
         for key in self.proxies:
             self.url_header_proxy.update(
-                {f"{key}": {"urls":  self.urls_list,
+                {f"{key}": {"urls": self.urls_list,
                             "header": self.get_user_agent_header(),
                             "http": f"http://{self.proxies[key]['Username']}:"
                                     f"{self.proxies[key]['Password']}@"
@@ -88,7 +102,6 @@ class RequestParameters:
 
 
 class UrlRequest(RequestParameters):
-
     def get_content(self):
         for key in self.url_header_proxy:
             session = self.session
