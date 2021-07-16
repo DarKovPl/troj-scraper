@@ -3,6 +3,7 @@ from environs import Env
 from requests import Session, Request
 from fake_useragent import UserAgent
 from threading import Event
+import math
 import re
 import random
 
@@ -25,6 +26,7 @@ class RequestParameters:
                         }
         self.url_header_proxy = {}
         self.urls_list = []
+        self.main_pages_creator = []
         self.set_start_activity_parameters()
 
     def get_main_page_url(self) -> list:
@@ -73,16 +75,32 @@ class RequestParameters:
 
         by_turns_list_urls.extend(last_urls)
         self.urls_list.extend(by_turns_list_urls)
+        return self.urls_list
 
-    def build_page_range_list(self, number_of_pages: int) -> list:
-        import wdb;
-        wdb.set_trace()
-        pages_creator = [
+    def build_page_range_list(self, number_of_pages: int):
+        self.main_pages_creator.extend(
             self.get_main_category_endpoint()[0] +
             ''.join(part_url for part_url in self.page_filters) +
             str(number) for number in range(number_of_pages + 1)
-        ]
-        return pages_creator
+        )
+        return self.main_pages_creator
+
+    def mix_pages_with_settings(self, pages_range: list):
+        import wdb;
+        wdb.set_trace()
+        divided = len(pages_range) / len(self.proxies)
+        fra, whole = math.modf(divided)
+        fractional = fra
+
+        for _ in range(len(self.proxies) + 1):
+            for _ in range(0, int(whole) + 1):
+                self.urls_list.append(pages_range.pop(0))
+
+            if fractional > 1:
+                self.urls_list.append(pages_range.pop(0))
+                fractional = fra
+            fractional += fra
+            return self.urls_list
 
     def set_urls_headers_proxies_for_requests(self) -> dict:
         import wdb;
