@@ -74,7 +74,7 @@ class RequestParameters:
                                                                                     + self.page_filters[0]]
 
         by_turns_list_urls.extend(last_urls)
-        self.urls_list.extend(by_turns_list_urls)
+        self.urls_list.append(by_turns_list_urls)
         return self.urls_list
 
     def build_page_range_list(self, number_of_pages: int):
@@ -85,22 +85,32 @@ class RequestParameters:
         )
         return self.main_pages_creator
 
-    def mix_pages_with_settings(self, pages_range: list):
+    def mix_advertises_pages(self, pages_range: list):
         import wdb;
         wdb.set_trace()
-        divided = len(pages_range) / len(self.proxies)
+        divided: float = len(pages_range) / len(self.proxies)
         fra, whole = math.modf(divided)
         fractional = fra
+        main_pages: list = []
 
         for _ in range(len(self.proxies) + 1):
             for _ in range(0, int(whole) + 1):
-                self.urls_list.append(pages_range.pop(0))
+                if len(pages_range) > 0:
+                    main_pages.append(pages_range.pop(0))
+                main_pages_copy = main_pages[2::4]
+                random.shuffle(main_pages_copy)
+                main_pages[2::4] = main_pages_copy
 
             if fractional > 1:
-                self.urls_list.append(pages_range.pop(0))
-                fractional = fra
+                if len(pages_range) > 0:
+                    main_pages.append(pages_range.pop(0))
+                    fractional = fra
+
             fractional += fra
-            return self.urls_list
+            self.urls_list.append(main_pages.copy())
+            main_pages.clear()
+
+        return self.urls_list
 
     def set_urls_headers_proxies_for_requests(self) -> dict:
         import wdb;
