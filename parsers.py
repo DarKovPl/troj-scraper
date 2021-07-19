@@ -27,7 +27,6 @@ class RequestParameters:
         self.url_header_proxy = {}
         self.urls_list = []
         self.main_pages_creator = []
-        self.set_start_activity_parameters()
 
     def get_main_page_url(self) -> list:
         self.env.read_env(self.env_path)
@@ -51,7 +50,7 @@ class RequestParameters:
                 self.proxies.update({str(i): {key: value for key, value in zip(self.proxies['0'].keys(), proxy_setup)}})
             return self.proxies
 
-    def set_start_activity_parameters(self):
+    def set_start_activity_settings_for_requests(self):
         for key in sorted(list(self.get_proxies_from_file())[1:], key=lambda x: random.random()):
             self.url_header_proxy.update(
                 {f"{key}": {"urls": self.get_main_page_url() + self.get_main_category_endpoint(),
@@ -64,8 +63,11 @@ class RequestParameters:
                  })
             self.proxies.pop(key)
             break
+        start_set = self.url_header_proxy.copy()
+        return start_set
 
     def build_start_urls_list(self, urls_from_main_page: list):
+        self.urls_list.clear()
         to_by_turns = list(map(lambda e: (e, self.get_main_page_url()[0]), urls_from_main_page))
         by_turns_list_urls = [url for tup_set in to_by_turns for url in tup_set]
         by_turns_list_urls.reverse()
@@ -88,6 +90,7 @@ class RequestParameters:
     def mix_advertises_pages(self, pages_range: list):
         import wdb;
         wdb.set_trace()
+        self.urls_list.clear()
         divided: float = len(pages_range) / len(self.proxies)
         fra, whole = math.modf(divided)
         fractional = fra
@@ -97,9 +100,9 @@ class RequestParameters:
             for _ in range(0, int(whole) + 1):
                 if len(pages_range) > 0:
                     main_pages.append(pages_range.pop(0))
-                main_pages_copy = main_pages[2::4]
+                main_pages_copy = main_pages[1::3]
                 random.shuffle(main_pages_copy)
-                main_pages[2::4] = main_pages_copy
+                main_pages[1::3] = main_pages_copy
 
             if fractional > 1:
                 if len(pages_range) > 0:
@@ -110,15 +113,17 @@ class RequestParameters:
             self.urls_list.append(main_pages.copy())
             main_pages.clear()
 
+        self.urls_list = self.urls_list[:-1] if self.urls_list[-1] == [] else self.urls_list
+        random.shuffle(self.urls_list)
         return self.urls_list
 
-    def set_urls_headers_proxies_for_requests(self) -> dict:
+    def set_settings_for_main_advertise_list(self, main_list_urls: list) -> dict:
         import wdb;
         wdb.set_trace()
-
+        self.url_header_proxy.clear()
         for key in self.proxies:
             self.url_header_proxy.update(
-                {f"{key}": {"urls": self.urls_list,
+                {f"{key}": {"urls": main_list_urls.pop(0),
                             "header": self.get_user_agent_header(),
                             "http": f"http://{self.proxies[key]['Username']}:"
                                     f"{self.proxies[key]['Password']}@"
@@ -130,16 +135,15 @@ class RequestParameters:
 
 
 class UrlRequest(RequestParameters):
-    def get_content(self):
-        for key in self.url_header_proxy:
+    def get_content(self, scrap_set):
+        for key in scrap_set:
             session = self.session
             session.cookies.clear()
-            for link in self.url_header_proxy[key]['urls']:
-                request = self.request('GET', link, headers=self.url_header_proxy[key]['header'])
+            for link in scrap_set[key]['urls']:
+                request = self.request('GET', link, headers=scrap_set[key]['header'])
                 prepped = session.prepare_request(request)
-                response = session.send(prepped, proxies=self.url_header_proxy[key])
+                response = session.send(prepped, proxies=scrap_set[key])
                 yield response
-
 
 class DataParser:
     def __init__(self, data: bytes):
