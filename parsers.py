@@ -88,8 +88,6 @@ class RequestParameters:
         return self.main_pages_creator
 
     def mix_advertises_pages(self, pages_range: list):
-        import wdb;
-        wdb.set_trace()
         self.urls_list.clear()
         divided: float = len(pages_range) / len(self.proxies)
         fra, whole = math.modf(divided)
@@ -118,8 +116,6 @@ class RequestParameters:
         return self.urls_list
 
     def set_settings_for_main_advertise_list(self, main_list_urls: list) -> dict:
-        import wdb;
-        wdb.set_trace()
         self.url_header_proxy.clear()
         for key in self.proxies:
             self.url_header_proxy.update(
@@ -140,10 +136,16 @@ class UrlRequest(RequestParameters):
             session = self.session
             session.cookies.clear()
             for link in scrap_set[key]['urls']:
+                Event().wait(0.01)
                 request = self.request('GET', link, headers=scrap_set[key]['header'])
+                Event().wait(0.01)
                 prepped = session.prepare_request(request)
-                response = session.send(prepped, proxies=scrap_set[key])
+                Event().wait(0.01)
+                response = session.send(prepped, proxies=scrap_set[key], timeout=10, stream=True)
+                Event().wait(0.01)
                 yield response
+                response.close()
+
 
 class DataParser:
     def __init__(self, data: bytes):

@@ -25,11 +25,17 @@ def main():
                 urls[i].extend(mixed_advertises[i])
 
             main_advertise_urls_with_settings.update(request_parameters.set_settings_for_main_advertise_list(urls))
+            print(main_advertise_urls_with_settings)
 
-    for page in UrlRequest().get_content(main_advertise_urls_with_settings):
-        print(page.url)
-        print(page.headers)
-        print(page.cookies)
+    for page_1 in UrlRequest().get_content(main_advertise_urls_with_settings):
+        Event().wait(8)
+        with open('content', 'wb+') as file:
+            file.write(page_1.content)
+
+        print(page_1.url)
+        print(page_1.headers)
+        print(page_1.cookies)
+        print(page_1.request.headers)
 
 
 if __name__ == '__main__':
