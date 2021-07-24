@@ -6,6 +6,7 @@ def main():
     pages_range = []
     urls = []
     main_advertise_urls_with_settings = {}
+    single_advert_links = []
 
     request_parameters = RequestParameters()
 
@@ -25,17 +26,37 @@ def main():
                 urls[i].extend(mixed_advertises[i])
 
             main_advertise_urls_with_settings.update(request_parameters.set_settings_for_main_advertise_list(urls))
-            print(main_advertise_urls_with_settings)
+
+            with open('links', 'a+') as file_1:
+                file_1.write('Start\n')
+                for i in main_advertise_urls_with_settings:
+                    for urls in main_advertise_urls_with_settings[i]['urls']:
+                        file_1.write(urls + '\n')
+                    file_1.write('Stop\n' * 5)
 
     for page_1 in UrlRequest().get_content(main_advertise_urls_with_settings):
         Event().wait(8)
-        with open('content', 'wb+') as file:
-            file.write(page_1.content)
+        # with open('main_pages_information', 'a+') as file:
+        #     file.write('Start\n')
+        #     file.writelines(str(page_1.url) + '\n')
+        #     file.writelines(str(page_1.headers) + '\n')
+        #     file.writelines(str(page_1.request.headers) + '\n')
+        #     file.write('Stop\t' * 5 + '\n')
+        single_advert_links.extend(
+                                   DataParser(page_1.content).get_all_advertisements_links_from_main_pages(
+                                                                                request_parameters.get_skippable_urls(),
+                                                                                page_1.url
+                                                                                                           )
+        )
 
-        print(page_1.url)
-        print(page_1.headers)
-        print(page_1.cookies)
-        print(page_1.request.headers)
+        import wdb;
+        wdb.set_trace()
+        if len(single_advert_links) != 0:
+            second_set_urls = request_parameters.copy_settings_from_main_advert_list(single_advert_links)
+
+            for link in UrlRequest().get_content(second_set_urls):
+                Event().wait(8)
+                print(link.url)
 
 
 if __name__ == '__main__':
