@@ -6,7 +6,7 @@ def main():
     pages_range = []
     urls = []
     main_advertise_urls_with_settings = {}
-    single_advert_links = []
+    single_adverts_links = []
 
     request_parameters = RequestParameters()
 
@@ -34,29 +34,40 @@ def main():
                         file_1.write(urls + '\n')
                     file_1.write('Stop\n' * 5)
 
-    for page_1 in UrlRequest().get_content(main_advertise_urls_with_settings):
-        Event().wait(8)
-        # with open('main_pages_information', 'a+') as file:
-        #     file.write('Start\n')
-        #     file.writelines(str(page_1.url) + '\n')
-        #     file.writelines(str(page_1.headers) + '\n')
-        #     file.writelines(str(page_1.request.headers) + '\n')
-        #     file.write('Stop\t' * 5 + '\n')
-        single_advert_links.extend(
-                                   DataParser(page_1.content).get_all_advertisements_links_from_main_pages(
-                                                                                request_parameters.get_skippable_urls(),
-                                                                                page_1.url
-                                                                                                           )
-        )
+    for dict_key in main_advertise_urls_with_settings:
+        for page_1 in UrlRequest().get_content(main_advertise_urls_with_settings):
+            Event().wait(4)
+            # with open('main_pages_information', 'a+') as file:
+            #     file.write('Start\n')
+            #     file.writelines(str(page_1.url) + '\n')
+            #     file.writelines(str(page_1.headers) + '\n')
+            #     file.writelines(str(page_1.request.headers) + '\n')
+            #     file.write('Stop\t' * 5 + '\n')
 
-        import wdb;
-        wdb.set_trace()
-        if len(single_advert_links) != 0:
-            second_set_urls = request_parameters.copy_settings_from_main_advert_list(single_advert_links)
+            single_adverts_links.extend(
+                DataParser(page_1.content).get_all_advertisements_links_from_main_pages(
+                    request_parameters.get_skippable_urls(),
+                    page_1.url
+                )
+            )
 
-            for link in UrlRequest().get_content(second_set_urls):
-                Event().wait(8)
-                print(link.url)
+            if len(single_adverts_links) != 0:
+                second_set_urls = request_parameters.copy_settings_from_main_adverts_list(
+                    dict_key,
+                    single_adverts_links
+                )
+
+                for page_2 in UrlRequest().get_content(second_set_urls):
+                    Event().wait(8)
+
+                    content = DataParser(page_2.content)
+
+                    advert_category: str = content.get_category_of_advertisement()
+                    print(advert_category)
+
+                    # price: str =
+
+                single_adverts_links.clear()
 
 
 if __name__ == '__main__':

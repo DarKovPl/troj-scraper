@@ -15,8 +15,6 @@ class RequestParameters:
         self.env_path = '.env'
         self.env = Env()
         self.user_agent = UserAgent()
-        self.session = Session()
-        self.request = Request
         self.proxies_file_path = 'proxy_file/proxies.txt'
         self.page_filters = ['o1,1.html', '?strona=']
         self.proxies = {
@@ -66,14 +64,14 @@ class RequestParameters:
             self.url_header_proxy.update(
                 {
                     f"{key}": {
-                                "urls": self.get_main_page_url() + self.get_main_category_endpoint(),
-                                "header": self.get_user_agent_header(),
-                                "http": f"http://{self.proxies[key]['Username']}:"
-                                        f"{self.proxies[key]['Password']}@"
-                                        f"{self.proxies[key]['Proxy Address']}:"
-                                        f"{self.proxies[key]['Port']}"
-                              }
-                 }
+                        "urls": self.get_main_page_url() + self.get_main_category_endpoint(),
+                        "header": self.get_user_agent_header(),
+                        "https": f"http://{self.proxies[key]['Username']}:"
+                                 f"{self.proxies[key]['Password']}@"
+                                 f"{self.proxies[key]['Proxy Address']}:"
+                                 f"{self.proxies[key]['Port']}"
+                    }
+                }
             )
             self.proxies.pop(key)
             break
@@ -139,34 +137,32 @@ class RequestParameters:
             self.url_header_proxy.update(
                 {
                     f"{key}": {
-                                "urls": main_list_urls.pop(0),
-                                "header": self.get_user_agent_header(),
-                                "http": f"http://{self.proxies[key]['Username']}:"
-                                        f"{self.proxies[key]['Password']}@"
-                                        f"{self.proxies[key]['Proxy Address']}:"
-                                        f"{self.proxies[key]['Port']}"
-                                }
+                        "urls": main_list_urls.pop(0),
+                        "header": self.get_user_agent_header(),
+                        "https": f"http://{self.proxies[key]['Username']}:"
+                                 f"{self.proxies[key]['Password']}@"
+                                 f"{self.proxies[key]['Proxy Address']}:"
+                                 f"{self.proxies[key]['Port']}"
+                    }
                 }
             )
         return self.url_header_proxy
 
-    def copy_settings_from_main_advert_list(self, urls: list) -> dict:
-        single_advert_links_settings = self.url_header_proxy.copy()
-        for key in self.proxies:
-            single_advert_links_settings.update(
-                {
-                    f"{key}": {
-                        "urls": urls,
+    def copy_settings_from_main_adverts_list(self, key: str, urls: list) -> dict:
+        single_list_links_settings: dict = self.url_header_proxy[key].copy()
+        single_list_links_settings['urls'] = urls
+        single_list_links_settings = ({f"{key}": single_list_links_settings})
 
-                    }
-                }
-
-            )
-        return single_advert_links_settings
+        return single_list_links_settings
 
 
-class UrlRequest(RequestParameters):
+class UrlRequest:
+    def __init__(self):
+        self.session = Session()
+        self.request = Request
+
     def get_content(self, scrap_set):
+
         for key in scrap_set:
             session = self.session
             session.cookies.clear()
@@ -214,3 +210,25 @@ class DataParser:
         for z in self.soup.findAll('span', itemprop='name')[-1]:
             advertise_category: str = unidecode(z)
         return advertise_category
+
+    def get_price(self) -> str:
+        price: str = unidecode(self.soup.find('span', class_='oglDetailsMoney').get_text())
+        return price
+
+    def get_head_details(self) -> dict:
+        head_details: dict = {}
+
+        for item in self.soup.findAll('li', class_='oglDetailsHead__item'):
+            name = unidecode(item.find('div', class_='oglField__name').get_text())
+            value = unidecode(item.find('span', class_='oglField__value').get_text())
+
+            if name == 'Liczba pokoi':
+                head_details[name] = value
+            elif name == 'Pietro':
+                head_details[name] = value
+            elif name == 'Rok budowy':
+                head_details[name] = value
+            else:
+                head_details[name] = value + ' UNEXPECTED VALUE'
+
+        return head_details
