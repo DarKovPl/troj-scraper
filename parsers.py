@@ -52,12 +52,18 @@ class RequestParameters:
         return random_header
 
     def get_proxies_from_file(self) -> dict:
+        proxy_setup: list = []
         with open(self.proxies_file_path, 'r') as file:
             for i, line in enumerate(file.readlines()):
                 line = line.rstrip('\n')
-                proxy_setup = line.split(':')
-                self.proxies.update({str(i): {key: value for key, value in zip(self.proxies['0'].keys(), proxy_setup)}})
-            return self.proxies
+                proxy = line.split(':')
+                proxy_setup.append(proxy)
+        random.shuffle(proxy_setup)
+        for i in range(len(proxy_setup)):
+            self.proxies.update({str(i): {key: value for key, value in zip(self.proxies['0'].keys(),
+                                                                           proxy_setup.pop(0))}})
+
+        return self.proxies
 
     def set_start_activity_settings_for_requests(self):
         for key in sorted(list(self.get_proxies_from_file())[1:], key=lambda x: random.random()):
@@ -215,20 +221,48 @@ class DataParser:
         price: str = unidecode(self.soup.find('span', class_='oglDetailsMoney').get_text())
         return price
 
-    def get_head_details(self) -> dict:
-        head_details: dict = {}
+    def get_core_details(self) -> dict:
+        core_details: dict = {}
 
-        for item in self.soup.findAll('li', class_='oglDetailsHead__item'):
-            name = unidecode(item.find('div', class_='oglField__name').get_text())
-            value = unidecode(item.find('span', class_='oglField__value').get_text())
+        for item in self.soup.findAll('div', class_='oglDetails panel'):
+            for container in item.findAll('div', class_='oglField__container'):
 
-            if name == 'Liczba pokoi':
-                head_details[name] = value
-            elif name == 'Pietro':
-                head_details[name] = value
-            elif name == 'Rok budowy':
-                head_details[name] = value
-            else:
-                head_details[name] = value + ' UNEXPECTED VALUE'
+                name = container.find('div', class_='oglField__name')
+                value = container.find('span', class_='oglField__value')
+                for_sibling = container.find('div', class_='oglField__name')
 
-        return head_details
+                name = unidecode(name.get_text())
+                core_details[name] = value
+                '''
+                First part address value filter. (City and district)
+                '''
+                if value is None:
+                    value = for_sibling.next_sibling
+                    core_details[name] = unidecode(str(value).replace('\xa0', ' '))
+
+                    '''
+                    Second address value filter. (Street and number of flat)
+                    There is a solved problem between the price and address fields.
+                    '''
+                    if for_sibling.find_next_sibling():
+                        if for_sibling.find_next_sibling().next_sibling and for_sibling.find_next_sibling('br'):
+                            value = for_sibling.find_next_sibling().next_sibling
+                            core_details[name] += ' ' + unidecode(str(value).replace('\xa0', ''))
+
+                        elif for_sibling.find_next_sibling() and for_sibling.find_next_sibling('br'):
+                            value = for_sibling.find_next_sibling()
+                            core_details[name] += ' ' + unidecode(str(value).replace('\xa0', ''))
+
+                if name == 'Dodatkowe informacje':
+                    value = [unidecode(i) for value in container.findAll('ul', class_='oglFieldList') for i in
+                             value.get_text().split('\n') if i]
+                    core_details[name] = value
+
+                if isinstance(value, str):
+                    continue
+
+                if not isinstance(value, list):
+                    value = unidecode(value.get_text())
+                    core_details[name] = value
+
+        return core_details

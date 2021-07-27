@@ -1,5 +1,6 @@
 from parsers import DataParser, UrlRequest, RequestParameters
 from threading import Event
+from datetime import datetime
 
 
 def main():
@@ -29,6 +30,7 @@ def main():
 
             with open('links', 'a+') as file_1:
                 file_1.write('Start\n')
+                file_1.write(str(datetime.now())[:-7].replace('-', '_').replace(' ', '_'))
                 for i in main_advertise_urls_with_settings:
                     for urls in main_advertise_urls_with_settings[i]['urls']:
                         file_1.write(urls + '\n')
@@ -64,8 +66,15 @@ def main():
 
                     advert_category: str = content.get_category_of_advertisement()
                     print(advert_category)
+                    print(page_2.url)
 
-                    # price: str =
+                    core_details: dict = content.get_core_details()
+                    print(core_details)
+                    print('*' * 80)
+                    with open('core_deatails', 'a+') as file:
+                        file.write(str(datetime.now())[:-7].replace('-', '_').replace(' ', '_'))
+                        file.writelines(str(core_details) + '\n')
+                        file.write('*' * 30 + '\n')
 
                 single_adverts_links.clear()
 
