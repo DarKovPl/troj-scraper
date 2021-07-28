@@ -186,6 +186,7 @@ class UrlRequest:
 class DataParser:
     def __init__(self, data: bytes):
         self.soup = BeautifulSoup(data, "lxml")
+        self.core_details: dict = {}
 
     def get_start_activity_urls_from_main_page(self) -> list:
         all_advert = self.soup.find('div', class_='section-content')
@@ -217,12 +218,12 @@ class DataParser:
             advertise_category: str = unidecode(z)
         return advertise_category
 
-    def get_price(self) -> str:
-        price: str = unidecode(self.soup.find('span', class_='oglDetailsMoney').get_text())
-        return price
+    def get_advert_title(self) -> dict:
+        advert_title: str = unidecode(self.soup.find('h1', class_='title').text)
+        self.core_details['Title'] = advert_title
+        return self.core_details
 
     def get_core_details(self) -> dict:
-        core_details: dict = {}
 
         for item in self.soup.findAll('div', class_='oglDetails panel'):
             for container in item.findAll('div', class_='oglField__container'):
@@ -232,13 +233,13 @@ class DataParser:
                 for_sibling = container.find('div', class_='oglField__name')
 
                 name = unidecode(name.get_text())
-                core_details[name] = value
+                self.core_details[name] = value
                 '''
                 First part address value filter. (City and district)
                 '''
                 if value is None:
                     value = for_sibling.next_sibling
-                    core_details[name] = unidecode(str(value).replace('\xa0', ' '))
+                    self.core_details[name] = unidecode(str(value).replace('\xa0', ' '))
 
                     '''
                     Second address value filter. (Street and number of flat)
@@ -247,22 +248,22 @@ class DataParser:
                     if for_sibling.find_next_sibling():
                         if for_sibling.find_next_sibling().next_sibling and for_sibling.find_next_sibling('br'):
                             value = for_sibling.find_next_sibling().next_sibling
-                            core_details[name] += ' ' + unidecode(str(value).replace('\xa0', ''))
+                            self.core_details[name] += ' ' + unidecode(str(value).replace('\xa0', ''))
 
-                        elif for_sibling.find_next_sibling() and for_sibling.find_next_sibling('br'):
-                            value = for_sibling.find_next_sibling()
-                            core_details[name] += ' ' + unidecode(str(value).replace('\xa0', ''))
+                        # elif for_sibling.find_next_sibling() and for_sibling.find_next_sibling('br'):
+                        #     value = for_sibling.find_next_sibling()
+                        #     self.core_details[name] += ' ' + unidecode(str(value).replace('\xa0', ''))
 
                 if name == 'Dodatkowe informacje':
                     value = [unidecode(i) for value in container.findAll('ul', class_='oglFieldList') for i in
                              value.get_text().split('\n') if i]
-                    core_details[name] = value
+                    self.core_details[name] = value
 
                 if isinstance(value, str):
                     continue
 
                 if not isinstance(value, list):
                     value = unidecode(value.get_text())
-                    core_details[name] = value
+                    self.core_details[name] = value
 
-        return core_details
+        return self.core_details

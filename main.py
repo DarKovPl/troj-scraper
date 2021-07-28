@@ -38,7 +38,7 @@ def main():
 
     for dict_key in main_advertise_urls_with_settings:
         for page_1 in UrlRequest().get_content(main_advertise_urls_with_settings):
-            Event().wait(4)
+            Event().wait(15)
             # with open('main_pages_information', 'a+') as file:
             #     file.write('Start\n')
             #     file.writelines(str(page_1.url) + '\n')
@@ -60,7 +60,7 @@ def main():
                 )
 
                 for page_2 in UrlRequest().get_content(second_set_urls):
-                    Event().wait(8)
+                    Event().wait(12)
 
                     content = DataParser(page_2.content)
 
@@ -68,11 +68,12 @@ def main():
                     print(advert_category)
                     print(page_2.url)
 
+                    content.get_advert_title()
                     core_details: dict = content.get_core_details()
                     print(core_details)
                     print('*' * 80)
                     with open('core_deatails', 'a+') as file:
-                        file.write(str(datetime.now())[:-7].replace('-', '_').replace(' ', '_'))
+                        file.write(str(datetime.now())[:-7].replace('-', '_').replace(' ', '_') + '\n')
                         file.writelines(str(core_details) + '\n')
                         file.write('*' * 30 + '\n')
 
