@@ -186,18 +186,23 @@ class UrlRequest:
 class DataParser:
     def __init__(self, data: bytes):
         self.soup = BeautifulSoup(data, "lxml")
-        self.core_details: dict = {}
+        self.advert_details: dict = {'Adres': None}
+        self.advert_stats: dict = {}
 
     def get_start_activity_urls_from_main_page(self) -> list:
         all_advert = self.soup.find('div', class_='section-content')
         urls = []
+
         for container in all_advert.findAll('div', class_='section__container'):
             for section in container.findAll('div', class_=re.compile("section__ogl section__ogl")):
                 for content in section.findAll('div', class_='front__ogl__content__title'):
+
                     url = [content.find('a')['href']]
                     urls.extend(url)
+
         number = random.randrange(2, 4)
         random_urls = random.sample(urls, number)
+
         return random_urls
 
     def get_last_page_number(self) -> str:
@@ -206,22 +211,28 @@ class DataParser:
 
     def get_all_advertisements_links_from_main_pages(self, forbidden_urls: list, url: str) -> list:
         urls: list = []
+
         while url not in forbidden_urls:
             for url in self.soup.findAll('a', class_='list__item__content__title__name link'):
                 urls.append(url['href'])
+
             return urls
         return urls
 
-    def get_category_of_advertisement(self) -> str:
+    def get_category_of_advertisement(self) -> dict:
         advertise_category = 'None'
+
         for z in self.soup.findAll('span', itemprop='name')[-1]:
             advertise_category: str = unidecode(z)
-        return advertise_category
+        self.advert_details['Advert_category'] = advertise_category
+
+        return self.advert_details
 
     def get_advert_title(self) -> dict:
         advert_title: str = unidecode(self.soup.find('h1', class_='title').text)
-        self.core_details['Title'] = advert_title
-        return self.core_details
+        self.advert_details['Title'] = advert_title
+
+        return self.advert_details
 
     def get_core_details(self) -> dict:
 
@@ -233,13 +244,13 @@ class DataParser:
                 for_sibling = container.find('div', class_='oglField__name')
 
                 name = unidecode(name.get_text())
-                self.core_details[name] = value
+                self.advert_details[name] = value
                 '''
                 First part address value filter. (City and district)
                 '''
                 if value is None:
                     value = for_sibling.next_sibling
-                    self.core_details[name] = unidecode(str(value).replace('\xa0', ' '))
+                    self.advert_details[name] = unidecode(str(value).replace('\xa0', ' '))
 
                     '''
                     Second address value filter. (Street and number of flat)
@@ -248,7 +259,7 @@ class DataParser:
                     if for_sibling.find_next_sibling():
                         if for_sibling.find_next_sibling().next_sibling and for_sibling.find_next_sibling('br'):
                             value = for_sibling.find_next_sibling().next_sibling
-                            self.core_details[name] += ' ' + unidecode(str(value).replace('\xa0', ''))
+                            self.advert_details[name] += ' ' + unidecode(str(value).replace('\xa0', ''))
 
                         # elif for_sibling.find_next_sibling() and for_sibling.find_next_sibling('br'):
                         #     value = for_sibling.find_next_sibling()
@@ -257,13 +268,33 @@ class DataParser:
                 if name == 'Dodatkowe informacje':
                     value = [unidecode(i) for value in container.findAll('ul', class_='oglFieldList') for i in
                              value.get_text().split('\n') if i]
-                    self.core_details[name] = value
+                    self.advert_details[name] = value
 
                 if isinstance(value, str):
                     continue
 
                 if not isinstance(value, list):
                     value = unidecode(value.get_text())
-                    self.core_details[name] = value
+                    self.advert_details[name] = value
 
-        return self.core_details
+        return self.advert_details
+
+    def get_advert_stats(self) -> dict:
+
+        for tag in self.soup.findAll('ul', class_='oglStats'):
+            for stats in tag.findAll('li'):
+
+                name = stats.find('span').previous_element
+                value = stats.find('span').text
+                self.advert_stats[name] = value
+
+        return self.advert_stats
+
+    def get_advert_description(self) -> dict:
+        description = self.soup.find('div', class_='ogl__description')
+        description = description.get_text().split('\n')
+        description = str(max(description, key=len))
+        description.lstrip(' ')
+        self.advert_details['Description'] = description
+
+        return self.advert_details

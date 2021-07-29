@@ -64,14 +64,20 @@ def main():
 
                     content = DataParser(page_2.content)
 
-                    advert_category: str = content.get_category_of_advertisement()
-                    print(advert_category)
-                    print(page_2.url)
-
+                    content.get_category_of_advertisement()
                     content.get_advert_title()
+                    content.get_advert_stats()
+
                     core_details: dict = content.get_core_details()
+                    content.get_advert_description()
+                    advert_stats: dict = content.get_advert_stats()
+                    print(page_2.url)
                     print(core_details)
+                    print(advert_stats)
+
                     print('*' * 80)
+
+
                     with open('core_deatails', 'a+') as file:
                         file.write(str(datetime.now())[:-7].replace('-', '_').replace(' ', '_') + '\n')
                         file.writelines(str(core_details) + '\n')
