@@ -66,12 +66,13 @@ def main():
 
                     content.get_category_of_advertisement()
                     content.get_advert_title()
+                    content.get_advert_link(page_2.url)
                     content.get_advert_stats()
 
                     core_details: dict = content.get_core_details()
                     content.get_advert_description()
                     advert_stats: dict = content.get_advert_stats()
-                    print(page_2.url)
+
                     print(core_details)
                     print(advert_stats)
 

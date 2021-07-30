@@ -196,7 +196,6 @@ class DataParser:
         for container in all_advert.findAll('div', class_='section__container'):
             for section in container.findAll('div', class_=re.compile("section__ogl section__ogl")):
                 for content in section.findAll('div', class_='front__ogl__content__title'):
-
                     url = [content.find('a')['href']]
                     urls.extend(url)
 
@@ -234,6 +233,12 @@ class DataParser:
 
         return self.advert_details
 
+    def get_advert_link(self, url):
+        advert_link: str = url
+        self.advert_details['Url'] = advert_link
+
+        return self.advert_details
+
     def get_core_details(self) -> dict:
 
         for item in self.soup.findAll('div', class_='oglDetails panel'):
@@ -261,10 +266,6 @@ class DataParser:
                             value = for_sibling.find_next_sibling().next_sibling
                             self.advert_details[name] += ' ' + unidecode(str(value).replace('\xa0', ''))
 
-                        # elif for_sibling.find_next_sibling() and for_sibling.find_next_sibling('br'):
-                        #     value = for_sibling.find_next_sibling()
-                        #     self.core_details[name] += ' ' + unidecode(str(value).replace('\xa0', ''))
-
                 if name == 'Dodatkowe informacje':
                     value = [unidecode(i) for value in container.findAll('ul', class_='oglFieldList') for i in
                              value.get_text().split('\n') if i]
@@ -277,24 +278,25 @@ class DataParser:
                     value = unidecode(value.get_text())
                     self.advert_details[name] = value
 
+        if self.advert_details['Adres'] is None:
+            rent_address = self.soup.find('div', class_='panel')
+            self.advert_details['Adres'] = rent_address
+
         return self.advert_details
 
     def get_advert_stats(self) -> dict:
+        tag = self.soup.find('ul', class_='oglStats')
 
-        for tag in self.soup.findAll('ul', class_='oglStats'):
-            for stats in tag.findAll('li'):
-
-                name = stats.find('span').previous_element
-                value = stats.find('span').text
-                self.advert_stats[name] = value
+        for stats in tag.findAll('li'):
+            name = stats.find('span').previous_element
+            value = stats.find('span').text
+            self.advert_stats[name] = value
 
         return self.advert_stats
 
     def get_advert_description(self) -> dict:
-        description = self.soup.find('div', class_='ogl__description')
-        description = description.get_text().split('\n')
-        description = str(max(description, key=len))
-        description.lstrip(' ')
+        description = self.soup.find('div', class_='ogl__description').get_text().split('\n')
+        description = str(max(description, key=len)).lstrip(' ')
         self.advert_details['Description'] = description
 
         return self.advert_details
