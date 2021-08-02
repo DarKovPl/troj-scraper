@@ -261,15 +261,14 @@ class DataParser:
                     Second address value filter. (Street and number of flat)
                     There is a solved problem between the price and address fields.
                     '''
-                    if for_sibling.find_next_sibling():
-                        if for_sibling.find_next_sibling().next_sibling and for_sibling.find_next_sibling('br'):
-                            value = for_sibling.find_next_sibling().next_sibling
-                            self.advert_details[name] += ' ' + unidecode(str(value).replace('\xa0', ''))
+                    if for_sibling.find_next_sibling('br'):
+                        value = for_sibling.find_next_sibling().next_sibling
+                        self.advert_details[name] += ' ' + unidecode(str(value).replace('\xa0', ''))
 
                 if name == 'Dodatkowe informacje':
                     value = [unidecode(i) for value in container.findAll('ul', class_='oglFieldList') for i in
                              value.get_text().split('\n') if i]
-                    self.advert_details[name] = value
+                    self.advert_details[name] = ', '.join(item for item in value)
 
                 if isinstance(value, str):
                     continue
@@ -279,8 +278,13 @@ class DataParser:
                     self.advert_details[name] = value
 
         if self.advert_details['Adres'] is None:
-            rent_address = self.soup.find('div', class_='panel')
-            self.advert_details['Adres'] = rent_address
+            rent__panel_address = self.soup.find('div', class_='oglField oglField--address')
+            address = rent__panel_address.find('div', class_='oglField__name').next_sibling
+            for_sibling = rent__panel_address.find('div', class_='oglField__name')
+
+            if for_sibling.find_next_sibling('br'):
+                address += ' ' + for_sibling.find_next_sibling().next_sibling
+            self.advert_details['Adres'] = unidecode(address.replace('\xa0', ' '))
 
         return self.advert_details
 
@@ -288,15 +292,14 @@ class DataParser:
         tag = self.soup.find('ul', class_='oglStats')
 
         for stats in tag.findAll('li'):
-            name = stats.find('span').previous_element
-            value = stats.find('span').text
+            name = unidecode(str(stats.find('span').previous_element).rstrip(': '))
+            value = unidecode(stats.find('span').get_text(strip=True))
             self.advert_stats[name] = value
 
         return self.advert_stats
 
     def get_advert_description(self) -> dict:
-        description = self.soup.find('div', class_='ogl__description').get_text().split('\n')
-        description = str(max(description, key=len)).lstrip(' ')
+        description = self.soup.find('div', class_='ogl__description').get_text(strip=True)
         self.advert_details['Description'] = description
 
         return self.advert_details

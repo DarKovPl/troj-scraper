@@ -1,3 +1,4 @@
+import orm
 from parsers import DataParser, UrlRequest, RequestParameters
 from threading import Event
 from datetime import datetime
@@ -68,20 +69,25 @@ def main():
                     content.get_advert_title()
                     content.get_advert_link(page_2.url)
                     content.get_advert_stats()
-
-                    core_details: dict = content.get_core_details()
                     content.get_advert_description()
-                    advert_stats: dict = content.get_advert_stats()
 
-                    print(core_details)
-                    print(advert_stats)
+                    advert_details: dict = content.get_core_details()
+                    advert_details.update(content.get_advert_stats())
+                    advert_details['Date'] = datetime.now().isoformat(' ', 'seconds')
+                    print(advert_details)
 
+                    add_advert = orm.TrojScrapperBase(**advert_details)
+                    orm.session.add(add_advert)
+                    orm.session.commit()
+
+                    print(advert_details)
+                    # print(advert_stats)
                     print('*' * 80)
 
 
                     with open('core_deatails', 'a+') as file:
                         file.write(str(datetime.now())[:-7].replace('-', '_').replace(' ', '_') + '\n')
-                        file.writelines(str(core_details) + '\n')
+                        file.writelines(str(advert_details) + '\n')
                         file.write('*' * 30 + '\n')
 
                 single_adverts_links.clear()
