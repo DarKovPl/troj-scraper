@@ -3,14 +3,15 @@ from parsers import DataParser, UrlRequest, RequestParameters
 from threading import Event
 from datetime import datetime
 
+pages_range = []
+main_advertise_urls_with_settings = {}
+single_adverts_links = []
+request_parameters = RequestParameters()
+second_set_urls = {}
+
 
 def main():
-    pages_range = []
     urls = []
-    main_advertise_urls_with_settings = {}
-    single_adverts_links = []
-
-    request_parameters = RequestParameters()
 
     for page in UrlRequest().get_content(request_parameters.set_start_activity_settings_for_requests()):
 
@@ -37,31 +38,42 @@ def main():
                         file_1.write(urls + '\n')
                     file_1.write('Stop\n' * 5)
 
-    for dict_key in main_advertise_urls_with_settings:
-        for page_1 in UrlRequest().get_content(main_advertise_urls_with_settings):
-            Event().wait(15)
-            # with open('main_pages_information', 'a+') as file:
-            #     file.write('Start\n')
-            #     file.writelines(str(page_1.url) + '\n')
-            #     file.writelines(str(page_1.headers) + '\n')
-            #     file.writelines(str(page_1.request.headers) + '\n')
-            #     file.write('Stop\t' * 5 + '\n')
+
+def main_2():
+    while True:
+        for dict_key in main_advertise_urls_with_settings:
+            main_page_request = UrlRequest().get_content_2(main_advertise_urls_with_settings[dict_key], dict_key)
+            main_page_request = next(main_page_request)
+            Event().wait(3)
+            with open('main_pages_information', 'a+') as file:
+                file.write('Start\n')
+                file.writelines(str(main_page_request.url) + '\n')
+                file.writelines(str(main_page_request.headers) + '\n')
+                file.writelines(str(main_page_request.request.headers) + '\n')
+                file.write('Stop\t' * 5 + '\n')
 
             single_adverts_links.extend(
-                DataParser(page_1.content).get_all_advertisements_links_from_main_pages(
+                DataParser(main_page_request.content).get_all_advertisements_links_from_main_pages(
                     request_parameters.get_skippable_urls(),
-                    page_1.url
+                    main_page_request.url
                 )
             )
 
             if len(single_adverts_links) != 0:
-                second_set_urls = request_parameters.copy_settings_from_main_adverts_list(
-                    dict_key,
-                    single_adverts_links
+                second_set_urls.update(
+                    request_parameters.copy_settings_from_main_adverts_list(
+                        dict_key,
+                        single_adverts_links.copy()
+                    )
                 )
+                single_adverts_links.clear()
 
-                for page_2 in UrlRequest().get_content(second_set_urls):
-                    Event().wait(12)
+                while True:
+                    import wdb;
+                    wdb.set_trace()
+                    page_2 = UrlRequest().get_content_2(second_set_urls[dict_key], dict_key)
+                    page_2 = next(page_2)
+                    Event().wait(3)
 
                     content = DataParser(page_2.content)
 
@@ -84,16 +96,23 @@ def main():
                     # print(advert_stats)
                     print('*' * 80)
 
-
                     with open('core_deatails', 'a+') as file:
                         file.write(str(datetime.now())[:-7].replace('-', '_').replace(' ', '_') + '\n')
                         file.writelines(str(advert_details) + '\n')
                         file.write('*' * 30 + '\n')
 
-                single_adverts_links.clear()
+                    if second_set_urls[dict_key]['urls']:
+                        second_set_urls[dict_key]['urls'].pop(0)
+
+                    if len(second_set_urls.keys()) != len(request_parameters.proxies):
+                        dict_key # to minus one
+                        break
+
+            if main_advertise_urls_with_settings[dict_key]['urls']:
+                main_advertise_urls_with_settings[dict_key]['urls'].pop(0)
 
 
 if __name__ == '__main__':
     main()
-
+    main_2()
 # import wdb; wdb.set_trace()

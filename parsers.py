@@ -1,3 +1,5 @@
+import pickle
+
 from bs4 import BeautifulSoup
 from environs import Env
 from requests import Session, Request
@@ -28,6 +30,7 @@ class RequestParameters:
         self.url_header_proxy = {}
         self.urls_list = []
         self.main_pages_creator = []
+        self.single_list_links_settings = {}
 
     def get_main_page_url(self) -> list:
         self.env.read_env(self.env_path)
@@ -154,12 +157,12 @@ class RequestParameters:
             )
         return self.url_header_proxy
 
-    def copy_settings_from_main_adverts_list(self, key: str, urls: list) -> dict:
-        single_list_links_settings: dict = self.url_header_proxy[key].copy()
-        single_list_links_settings['urls'] = urls
-        single_list_links_settings = ({f"{key}": single_list_links_settings})
+    def copy_settings_from_main_adverts_list(self, key: str, urls: list):
+        self.single_list_links_settings = self.url_header_proxy[key].copy()
+        self.single_list_links_settings['urls'] = urls
+        self.single_list_links_settings = {f"{key}": self.single_list_links_settings}
 
-        return single_list_links_settings
+        return self.single_list_links_settings.items()
 
 
 class UrlRequest:
@@ -181,6 +184,26 @@ class UrlRequest:
                 response = session.send(prepped, proxies=scrap_set[key], timeout=10, stream=True)
                 yield response
                 response.close()
+
+    def get_content_2(self, scrap_set, dict_key):
+        try:
+            with open(f'sessions/session_{dict_key}.pkl', 'rb') as file:
+                session = pickle.load(file)
+        except IOError:
+            session = self.session
+
+        for link in scrap_set['urls']:
+            Event().wait(0.01)
+            request = self.request('GET', link, headers=scrap_set['header'])
+            prepped = session.prepare_request(request)
+            response = session.send(prepped, proxies=scrap_set, timeout=10, stream=True)
+
+            with open(f'sessions/session_{dict_key}.pkl', 'wb') as file:
+                pickle.dump(session, file)
+
+            yield response
+            response.close()
+            break
 
 
 class DataParser:
@@ -248,7 +271,11 @@ class DataParser:
                 value = container.find('span', class_='oglField__value')
                 for_sibling = container.find('div', class_='oglField__name')
 
-                name = unidecode(name.get_text())
+                if not name.find('span', class_='NewPrice__value'):
+                    name = unidecode(name.get_text())
+                elif name.find('span', class_='NewPrice__value'):
+                    name = 'Cena'
+
                 self.advert_details[name] = value
                 '''
                 First part address value filter. (City and district)
