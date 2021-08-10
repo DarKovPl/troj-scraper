@@ -1,3 +1,5 @@
+import random
+
 import orm
 from parsers import DataParser, UrlRequest, RequestParameters
 from threading import Event
@@ -6,8 +8,9 @@ from datetime import datetime
 pages_range = []
 main_advertise_urls_with_settings = {}
 single_adverts_links = []
-request_parameters = RequestParameters()
 second_set_urls = {}
+
+request_parameters = RequestParameters()
 
 
 def main():
@@ -40,7 +43,8 @@ def main():
 
 
 def main_2():
-    while True:
+    main_while_condition = True
+    while main_while_condition:
         for dict_key in main_advertise_urls_with_settings:
             main_page_request = UrlRequest().get_content_2(main_advertise_urls_with_settings[dict_key], dict_key)
             main_page_request = next(main_page_request)
@@ -60,17 +64,23 @@ def main_2():
             )
 
             if len(single_adverts_links) != 0:
-                second_set_urls.update(
-                    request_parameters.copy_settings_from_main_adverts_list(
-                        dict_key,
-                        single_adverts_links.copy()
-                    )
+                updated_single_adverts = request_parameters.copy_settings_from_main_adverts_list(
+                    dict_key,
+                    single_adverts_links.copy()
                 )
+
+                if dict_key in second_set_urls:
+                    for i in updated_single_adverts.get(dict_key).get('urls'):
+                        second_set_urls[dict_key]['urls'].append(i)
+
+                while dict_key not in second_set_urls:
+                    second_set_urls.update(updated_single_adverts)
+
                 single_adverts_links.clear()
 
-                while True:
-                    import wdb;
-                    wdb.set_trace()
+                condition = True
+                while condition:
+
                     page_2 = UrlRequest().get_content_2(second_set_urls[dict_key], dict_key)
                     page_2 = next(page_2)
                     Event().wait(3)
@@ -100,17 +110,34 @@ def main_2():
                         file.write(str(datetime.now())[:-7].replace('-', '_').replace(' ', '_') + '\n')
                         file.writelines(str(advert_details) + '\n')
                         file.write('*' * 30 + '\n')
-
+                    import wdb;
+                    wdb.set_trace()
                     if second_set_urls[dict_key]['urls']:
                         second_set_urls[dict_key]['urls'].pop(0)
 
-                    if len(second_set_urls.keys()) != len(request_parameters.proxies):
-                        dict_key # to minus one
+                        if len(second_set_urls) == len(request_parameters.proxies):
+                            dict_key = [k for k, v in second_set_urls.items() if v.get('urls')]
+
+                            if dict_key is not []:
+                                dict_key = random.choice(dict_key)
+
+                            else:
+                                condition = False
+                    else:
+                        condition = False
+
+                    if len(second_set_urls) != len(request_parameters.proxies):
                         break
 
-            if main_advertise_urls_with_settings[dict_key]['urls']:
-                main_advertise_urls_with_settings[dict_key]['urls'].pop(0)
+            else:
+                if main_advertise_urls_with_settings[dict_key]['urls']:
+                    main_advertise_urls_with_settings[dict_key]['urls'].pop(0)
 
+                    if main_advertise_urls_with_settings[dict_key]['urls'] is []:
+                        main_while_condition = False
+
+
+#   exit while loop condition put here
 
 if __name__ == '__main__':
     main()

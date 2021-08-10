@@ -162,7 +162,7 @@ class RequestParameters:
         self.single_list_links_settings['urls'] = urls
         self.single_list_links_settings = {f"{key}": self.single_list_links_settings}
 
-        return self.single_list_links_settings.items()
+        return self.single_list_links_settings
 
 
 class UrlRequest:
