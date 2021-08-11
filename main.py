@@ -1,13 +1,20 @@
+import random
+
+import orm
 from parsers import DataParser, UrlRequest, RequestParameters
 from threading import Event
+from datetime import datetime
+
+pages_range = []
+main_advertise_urls_with_settings = {}
+single_adverts_links = []
+second_set_urls = {}
+
+request_parameters = RequestParameters()
 
 
 def main():
-    pages_range = []
     urls = []
-    main_advertise_urls_with_settings = {}
-
-    request_parameters = RequestParameters()
 
     for page in UrlRequest().get_content(request_parameters.set_start_activity_settings_for_requests()):
 
@@ -25,20 +32,114 @@ def main():
                 urls[i].extend(mixed_advertises[i])
 
             main_advertise_urls_with_settings.update(request_parameters.set_settings_for_main_advertise_list(urls))
-            print(main_advertise_urls_with_settings)
 
-    for page_1 in UrlRequest().get_content(main_advertise_urls_with_settings):
-        Event().wait(8)
-        with open('content', 'wb+') as file:
-            file.write(page_1.content)
+            with open('links', 'a+') as file_1:
+                file_1.write('Start\n')
+                file_1.write(str(datetime.now())[:-7].replace('-', '_').replace(' ', '_'))
+                for i in main_advertise_urls_with_settings:
+                    for urls in main_advertise_urls_with_settings[i]['urls']:
+                        file_1.write(urls + '\n')
+                    file_1.write('Stop\n' * 5)
 
-        print(page_1.url)
-        print(page_1.headers)
-        print(page_1.cookies)
-        print(page_1.request.headers)
 
+def main_2():
+    main_while_condition = True
+    while main_while_condition:
+        for dict_key in main_advertise_urls_with_settings:
+            main_page_request = UrlRequest().get_content_2(main_advertise_urls_with_settings[dict_key], dict_key)
+            main_page_request = next(main_page_request)
+            Event().wait(3)
+            with open('main_pages_information', 'a+') as file:
+                file.write('Start\n')
+                file.writelines(str(main_page_request.url) + '\n')
+                file.writelines(str(main_page_request.headers) + '\n')
+                file.writelines(str(main_page_request.request.headers) + '\n')
+                file.write('Stop\t' * 5 + '\n')
+
+            single_adverts_links.extend(
+                DataParser(main_page_request.content).get_all_advertisements_links_from_main_pages(
+                    request_parameters.get_skippable_urls(),
+                    main_page_request.url
+                )
+            )
+
+            if len(single_adverts_links) != 0:
+                updated_single_adverts = request_parameters.copy_settings_from_main_adverts_list(
+                    dict_key,
+                    single_adverts_links.copy()
+                )
+
+                if dict_key in second_set_urls:
+                    for i in updated_single_adverts.get(dict_key).get('urls'):
+                        second_set_urls[dict_key]['urls'].append(i)
+
+                while dict_key not in second_set_urls:
+                    second_set_urls.update(updated_single_adverts)
+
+                single_adverts_links.clear()
+
+                condition = True
+                while condition:
+
+                    page_2 = UrlRequest().get_content_2(second_set_urls[dict_key], dict_key)
+                    page_2 = next(page_2)
+                    Event().wait(3)
+
+                    content = DataParser(page_2.content)
+
+                    content.get_category_of_advertisement()
+                    content.get_advert_title()
+                    content.get_advert_link(page_2.url)
+                    content.get_advert_stats()
+                    content.get_advert_description()
+
+                    advert_details: dict = content.get_core_details()
+                    advert_details.update(content.get_advert_stats())
+                    advert_details['Date'] = datetime.now().isoformat(' ', 'seconds')
+                    print(advert_details)
+
+                    add_advert = orm.TrojScrapperBase(**advert_details)
+                    orm.session.add(add_advert)
+                    orm.session.commit()
+
+                    print(advert_details)
+                    # print(advert_stats)
+                    print('*' * 80)
+
+                    with open('core_deatails', 'a+') as file:
+                        file.write(str(datetime.now())[:-7].replace('-', '_').replace(' ', '_') + '\n')
+                        file.writelines(str(advert_details) + '\n')
+                        file.write('*' * 30 + '\n')
+                    import wdb;
+                    wdb.set_trace()
+                    if second_set_urls[dict_key]['urls']:
+                        second_set_urls[dict_key]['urls'].pop(0)
+
+                        if len(second_set_urls) == len(request_parameters.proxies):
+                            dict_key = [k for k, v in second_set_urls.items() if v.get('urls')]
+
+                            if dict_key is not []:
+                                dict_key = random.choice(dict_key)
+
+                            else:
+                                condition = False
+                    else:
+                        condition = False
+
+                    if len(second_set_urls) != len(request_parameters.proxies):
+                        break
+
+            else:
+                if main_advertise_urls_with_settings[dict_key]['urls']:
+                    main_advertise_urls_with_settings[dict_key]['urls'].pop(0)
+
+                    if main_advertise_urls_with_settings[dict_key]['urls'] is []:
+                        main_while_condition = False
+
+
+#   exit while loop condition put here
 
 if __name__ == '__main__':
     main()
-
+    main_2()
 # import wdb; wdb.set_trace()
