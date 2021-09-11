@@ -109,17 +109,13 @@ def main_2():
                         file.write('*' * 30 + '\n')
                     # import wdb;
                     # wdb.set_trace()
-                    if second_set_urls[dict_key]['urls']:
+                    if len(second_set_urls[dict_key]['urls']) != 0:
                         second_set_urls[dict_key]['urls'].pop(0)
 
                         if len(second_set_urls) == len(request_parameters.proxies):
-                            dict_key = [k for k, v in second_set_urls.items() if v.get('urls')]
+                            urls_settings = second_set_urls.copy()
+                            dict_key = request_parameters.balance_single_advert_request(urls_settings)
 
-                            if len(dict_key) != 0:
-                                dict_key = random.choice(dict_key)
-
-                            else:
-                                condition = False
                     else:
                         condition = False
 

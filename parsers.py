@@ -32,6 +32,7 @@ class RequestParameters:
         self.main_pages_creator = []
         self.single_list_links_settings = {}
         self.all_single_adverts_links = {}
+        self.forbidden_key = ''
 
     def get_main_page_url(self) -> list:
         self.env.read_env(self.env_path)
@@ -165,16 +166,30 @@ class RequestParameters:
 
         return self.single_list_links_settings
 
-    def add_all_single_adverts_links(self, dict_key: str, settings_urls: dict) -> dict:
+    def add_all_single_adverts_links(self, dict_key: str, urls_settings: dict) -> dict:
 
         if dict_key in self.all_single_adverts_links:
-            for i in settings_urls.get(dict_key).get('urls'):
+            for i in urls_settings.get(dict_key).get('urls'):
                 self.all_single_adverts_links[dict_key]['urls'].append(i)
             return self.all_single_adverts_links
 
         while dict_key not in self.all_single_adverts_links:
-            self.all_single_adverts_links.update(settings_urls)
+            self.all_single_adverts_links.update(urls_settings)
         return self.all_single_adverts_links
+
+    def balance_single_advert_request(self, urls_settings: dict) -> str:
+        import wdb;
+        wdb.set_trace()
+        if self.forbidden_key != '':
+            urls_settings.pop(self.forbidden_key)
+
+        parameters = [(k, len(v.get('urls'))) for k, v in urls_settings.items() if v.get('urls')]
+        dict_keys = [str_keys for n in [str(k) * v for k, v in parameters if v != 0] for str_keys in n]
+
+        dict_key = random.choice(dict_keys)
+        self.forbidden_key = dict_key
+
+        return dict_key
 
 
 class UrlRequest:
@@ -234,7 +249,7 @@ class DataParser:
                     url = [content.find('a')['href']]
                     urls.extend(url)
 
-        number = random.randrange(2, 3)
+        number = random.randrange(2, 4)
         random_urls = random.sample(urls, number)
 
         return random_urls
