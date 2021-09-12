@@ -107,13 +107,13 @@ def main_2():
                         file.write(str(datetime.now())[:-7].replace('-', '_').replace(' ', '_') + '\n')
                         file.writelines(str(advert_details) + '\n')
                         file.write('*' * 30 + '\n')
-                    # import wdb;
-                    # wdb.set_trace()
+
                     if len(second_set_urls[dict_key]['urls']) != 0:
                         second_set_urls[dict_key]['urls'].pop(0)
 
                         if len(second_set_urls) == len(request_parameters.proxies):
                             urls_settings = second_set_urls.copy()
+                            urls_settings = request_parameters.remove_duplicate_ad_urls(urls_settings)
                             dict_key = request_parameters.balance_single_advert_request(urls_settings)
 
                     else:
@@ -123,7 +123,7 @@ def main_2():
                         break
 
             else:
-                if main_advertise_urls_with_settings[dict_key]['urls']:
+                if len(main_advertise_urls_with_settings[dict_key]['urls']) != 0:
                     main_advertise_urls_with_settings[dict_key]['urls'].pop(0)
 
                     if main_advertise_urls_with_settings[dict_key]['urls'] is []:

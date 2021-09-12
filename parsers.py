@@ -178,8 +178,6 @@ class RequestParameters:
         return self.all_single_adverts_links
 
     def balance_single_advert_request(self, urls_settings: dict) -> str:
-        import wdb;
-        wdb.set_trace()
         if self.forbidden_key != '':
             urls_settings.pop(self.forbidden_key)
 
@@ -190,6 +188,17 @@ class RequestParameters:
         self.forbidden_key = dict_key
 
         return dict_key
+
+    def remove_duplicate_ad_urls(self, urls_settings: dict) -> dict:
+        import wdb;
+        wdb.set_trace()
+        for key in urls_settings:
+            for _, urls_list in urls_settings[key].items():
+                if sec_key == 'urls':
+                urls_list = list(set(urls_list))
+                urls_settings[key]['urls'] = urls_list
+
+        return urls_settings
 
 
 class UrlRequest:
