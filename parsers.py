@@ -189,16 +189,9 @@ class RequestParameters:
 
         return dict_key
 
-    def remove_duplicate_ad_urls(self, urls_settings: dict) -> dict:
-        import wdb;
-        wdb.set_trace()
-        for key in urls_settings:
-            for _, urls_list in urls_settings[key].items():
-                if sec_key == 'urls':
-                urls_list = list(set(urls_list))
-                urls_settings[key]['urls'] = urls_list
+    # def check_which_proxies_are_unused(self, main_advertise_urls):
 
-        return urls_settings
+
 
 
 class UrlRequest:
@@ -258,7 +251,7 @@ class DataParser:
                     url = [content.find('a')['href']]
                     urls.extend(url)
 
-        number = random.randrange(2, 4)
+        number = random.randrange(2, 3)
         random_urls = random.sample(urls, number)
 
         return random_urls

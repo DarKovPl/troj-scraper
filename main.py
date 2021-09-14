@@ -1,5 +1,3 @@
-import random
-
 import orm
 from parsers import DataParser, UrlRequest, RequestParameters
 from threading import Event
@@ -23,7 +21,7 @@ def main():
                 urls.extend(request_parameters.build_start_urls_list(page_urls))
 
         elif page.url == request_parameters.get_main_category_endpoint()[0]:
-            last_page_number = DataParser(page.content).get_last_page_number()
+            last_page_number = 18 #DataParser(page.content).get_last_page_number()
             pages_range.extend(request_parameters.build_page_range_list(int(last_page_number)))
             mixed_advertises: list = request_parameters.mix_advertises_pages(pages_range)
 
@@ -31,6 +29,7 @@ def main():
                 urls[i].extend(mixed_advertises[i])
 
             main_advertise_urls_with_settings.update(request_parameters.set_settings_for_main_advertise_list(urls))
+            # request_parameters.check_which_proxies_are_unused(main_advertise_urls_with_settings)
 
             with open('links', 'a+') as file_1:
                 file_1.write('Start\n')
@@ -45,9 +44,17 @@ def main_2():
     main_while_condition = True
     while main_while_condition:
         for dict_key in main_advertise_urls_with_settings:
+            import wdb;
+            wdb.set_trace()
+            if len(main_advertise_urls_with_settings[dict_key]['urls']) == 0:
+                del main_advertise_urls_with_settings[dict_key]
+                del request_parameters.proxies[dict_key]
+                continue # break
+
             main_page_request = UrlRequest().get_content_2(main_advertise_urls_with_settings[dict_key], dict_key)
             main_page_request = next(main_page_request)
             Event().wait(3)
+
             with open('main_pages_information', 'a+') as file:
                 file.write('Start\n')
                 file.writelines(str(main_page_request.url) + '\n')
@@ -69,13 +76,6 @@ def main_2():
                 )
 
                 second_set_urls = request_parameters.add_all_single_adverts_links(dict_key, updated_single_adverts_links)
-                # if dict_key in second_set_urls:
-                #     for i in updated_single_adverts_links.get(dict_key).get('urls'):
-                #         second_set_urls[dict_key]['urls'].append(i)
-                #
-                # while dict_key not in second_set_urls:
-                #     second_set_urls.update(updated_single_adverts_links)
-
                 single_adverts_links.clear()
 
                 condition = True
@@ -113,24 +113,22 @@ def main_2():
 
                         if len(second_set_urls) == len(request_parameters.proxies):
                             urls_settings = second_set_urls.copy()
-                            urls_settings = request_parameters.remove_duplicate_ad_urls(urls_settings)
                             dict_key = request_parameters.balance_single_advert_request(urls_settings)
 
                     else:
                         condition = False
 
                     if len(second_set_urls) != len(request_parameters.proxies):
-                        break
+                        break # continue
 
             else:
                 if len(main_advertise_urls_with_settings[dict_key]['urls']) != 0:
                     main_advertise_urls_with_settings[dict_key]['urls'].pop(0)
 
-                    if main_advertise_urls_with_settings[dict_key]['urls'] is []:
+                else:
+                    if len(main_advertise_urls_with_settings) == 0:
                         main_while_condition = False
 
-
-#   exit while loop condition put here
 
 if __name__ == '__main__':
     main()
