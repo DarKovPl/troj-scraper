@@ -251,7 +251,7 @@ class DataParser:
                     url = [content.find('a')['href']]
                     urls.extend(url)
 
-        number = random.randrange(2, 3)
+        number = random.randrange(1, 2)
         random_urls = random.sample(urls, number)
 
         return random_urls
