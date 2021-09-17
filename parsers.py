@@ -181,13 +181,18 @@ class RequestParameters:
         if self.forbidden_key != '':
             urls_settings.pop(self.forbidden_key)
 
-        parameters = [(k, len(v.get('urls'))) for k, v in urls_settings.items() if v.get('urls')]
-        dict_keys = [str_keys for n in [str(k) * v for k, v in parameters if v != 0] for str_keys in n]
+        if len(urls_settings) > 1:
 
-        dict_key = random.choice(dict_keys)
-        self.forbidden_key = dict_key
+            parameters = [(k, len(v.get('urls'))) for k, v in urls_settings.items() if v.get('urls')]
+            dict_keys = [str_keys for n in [str(k) * v for k, v in parameters if v != 0] for str_keys in n]
 
-        return dict_key
+            dict_key = random.choice(dict_keys)
+            self.forbidden_key = dict_key
+            return dict_key
+
+        else:
+            dict_key, _ = urls_settings.popitem()
+            return dict_key
 
     # def check_which_proxies_are_unused(self, main_advertise_urls):
 
@@ -251,7 +256,7 @@ class DataParser:
                     url = [content.find('a')['href']]
                     urls.extend(url)
 
-        number = random.randrange(1, 2)
+        number = random.randrange(2, 4)
         random_urls = random.sample(urls, number)
 
         return random_urls
