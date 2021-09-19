@@ -178,9 +178,11 @@ class RequestParameters:
         return self.all_single_adverts_links
 
     def balance_single_advert_request(self, urls_settings: dict) -> str:
-        if self.forbidden_key != '':
+        if (self.forbidden_key != '') and (len(urls_settings) > 1):
             urls_settings.pop(self.forbidden_key)
 
+        import wdb;
+        wdb.set_trace()
         if len(urls_settings) > 1:
 
             parameters = [(k, len(v.get('urls'))) for k, v in urls_settings.items() if v.get('urls')]
@@ -192,6 +194,7 @@ class RequestParameters:
 
         else:
             dict_key, _ = urls_settings.popitem()
+            self.forbidden_key = dict_key
             return dict_key
 
     # def check_which_proxies_are_unused(self, main_advertise_urls):
