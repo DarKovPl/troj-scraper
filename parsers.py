@@ -181,8 +181,6 @@ class RequestParameters:
         if (self.forbidden_key != '') and (len(urls_settings) > 1):
             urls_settings.pop(self.forbidden_key)
 
-        import wdb;
-        wdb.set_trace()
         if len(urls_settings) > 1:
 
             parameters = [(k, len(v.get('urls'))) for k, v in urls_settings.items() if v.get('urls')]
@@ -196,6 +194,12 @@ class RequestParameters:
             dict_key, _ = urls_settings.popitem()
             self.forbidden_key = dict_key
             return dict_key
+
+    def check_amount_main_page_links(self, main_page_links: dict) -> bool:
+        for k, v in main_page_links.items():
+            if len(v['urls']) > 0:
+                return True
+        return False
 
     # def check_which_proxies_are_unused(self, main_advertise_urls):
 
