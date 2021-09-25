@@ -125,9 +125,9 @@ class RequestParameters:
                 if len(pages_range) > 0:
                     main_pages.append(pages_range.pop(0))
 
-                main_pages_copy = main_pages[1::3]
+                main_pages_copy = main_pages[1::2]
                 random.shuffle(main_pages_copy)
-                main_pages[1::3] = main_pages_copy
+                main_pages[1::2] = main_pages_copy
 
             if fractional > 1:
                 if len(pages_range) > 0:
@@ -178,7 +178,7 @@ class RequestParameters:
         return self.all_single_adverts_links
 
     def balance_single_advert_request(self, urls_settings: dict) -> str:
-        if (self.forbidden_key != '') and (len(urls_settings) > 1):
+        if (self.forbidden_key in urls_settings) and (len(urls_settings) > 1):
             urls_settings.pop(self.forbidden_key)
 
         if len(urls_settings) > 1:
@@ -195,14 +195,20 @@ class RequestParameters:
             self.forbidden_key = dict_key
             return dict_key
 
-    def check_amount_main_page_links(self, main_page_links: dict) -> bool:
+    def get_highest_number_of_links(self, main_pages: dict) -> str:
+        import wdb;
+        wdb.set_trace()
+        main_pages = [(k, len(v['urls'])) for k, v in main_pages.items()]
+        dict_key = max(main_pages, key=lambda k: k[1])[0]
+        return dict_key
+
+    def check_number_main_page_links(self, main_page_links: dict) -> bool:
         for k, v in main_page_links.items():
             if len(v['urls']) > 0:
                 return True
         return False
 
     # def check_which_proxies_are_unused(self, main_advertise_urls):
-
 
 
 

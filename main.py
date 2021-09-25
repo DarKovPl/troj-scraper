@@ -21,7 +21,7 @@ def main():
                 urls.extend(request_parameters.build_start_urls_list(page_urls))
 
         elif page.url == request_parameters.get_main_category_endpoint()[0]:
-            last_page_number = 4  # DataParser(page.content).get_last_page_number()
+            last_page_number = 7  # DataParser(page.content).get_last_page_number()
             pages_range.extend(request_parameters.build_page_range_list(int(last_page_number)))
             mixed_advertises: list = request_parameters.mix_advertises_pages(pages_range)
 
@@ -29,7 +29,6 @@ def main():
                 urls[i].extend(mixed_advertises[i])
 
             main_advertise_urls_with_settings.update(request_parameters.set_settings_for_main_advertise_list(urls))
-            # request_parameters.check_which_proxies_are_unused(main_advertise_urls_with_settings)
 
             with open('links', 'a+') as file_1:
                 file_1.write('Start\n')
@@ -121,11 +120,20 @@ def main_2():
                             import wdb;
                             wdb.set_trace()
                             del second_set_urls[dict_key]
-                        condition = request_parameters.check_amount_main_page_links(
+
+                        condition: bool = request_parameters.check_number_main_page_links(
                             main_advertise_urls_with_settings
                         )
+
                         if len(second_set_urls) <= 1 and condition is True:
+                            import wdb;
+                            wdb.set_trace()
+                            main_pages = main_advertise_urls_with_settings.copy()
+                            dict_key = request_parameters.get_highest_number_of_links(
+                                main_pages
+                            )
                             break
+
                         elif len(second_set_urls) <= 1 and condition is False:
                             Event().wait(10)
 
