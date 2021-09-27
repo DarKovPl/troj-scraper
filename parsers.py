@@ -14,12 +14,12 @@ import random
 class RequestParameters:
 
     def __init__(self):
-        self.env_path = '.env'
+        self.env_path: str = '.env'
         self.env = Env()
         self.user_agent = UserAgent()
-        self.proxies_file_path = 'proxy_file/proxies.txt'
-        self.page_filters = ['o1,1.html', '?strona=']
-        self.proxies = {
+        self.proxies_file_path: str = 'proxy_file/proxies.txt'
+        self.page_filters: list = ['o1,1.html', '?strona=']
+        self.proxies: dict = {
             '0': {
                 'Proxy Address': 0,
                 'Port': 0,
@@ -27,21 +27,23 @@ class RequestParameters:
                 'Password': 0
             }
         }
-        self.url_header_proxy = {}
-        self.urls_list = []
-        self.main_pages_creator = []
-        self.single_list_links_settings = {}
-        self.all_single_adverts_links = {}
-        self.forbidden_key = ''
+        self.url_header_proxy: dict = {}
+        self.urls_list: list = []
+        self.main_pages_creator: list = []
+        self.single_list_links_settings: dict = {}
+        self.all_single_adverts_links: dict = {}
+        self.forbidden_key: str = ''
 
     def get_main_page_url(self) -> list:
         self.env.read_env(self.env_path)
         main_page_url = self.env.list('MAIN_PAGE_URL')
+
         return main_page_url
 
     def get_main_category_endpoint(self) -> list:
         self.env.read_env(self.env_path)
         main_category_endpoint = self.env.list('MAIN_CATEGORY_ENDPOINT')
+
         return main_category_endpoint
 
     def get_skippable_urls(self) -> list:
@@ -53,7 +55,8 @@ class RequestParameters:
         return skip_urls
 
     def get_user_agent_header(self) -> dict:
-        random_header = {'User-Agent': self.user_agent.random}
+        random_header: dict = {'User-Agent': self.user_agent.random}
+
         return random_header
 
     def get_proxies_from_file(self) -> dict:
@@ -63,14 +66,17 @@ class RequestParameters:
                 line = line.rstrip('\n')
                 proxy = line.split(':')
                 proxy_setup.append(proxy)
+
         random.shuffle(proxy_setup)
+
         for i in range(len(proxy_setup)):
-            self.proxies.update({str(i): {key: value for key, value in zip(self.proxies['0'].keys(),
-                                                                           proxy_setup.pop(0))}})
+            self.proxies.update(
+                {str(i): {key: value for key, value in zip(self.proxies['0'].keys(), proxy_setup.pop(0))}}
+            )
 
         return self.proxies
 
-    def set_start_activity_settings_for_requests(self):
+    def set_start_activity_settings_for_requests(self) -> dict:
         for key in sorted(list(self.get_proxies_from_file())[1:], key=lambda x: random.random()):
             self.url_header_proxy.update(
                 {
@@ -87,37 +93,40 @@ class RequestParameters:
             self.proxies.pop(key)
             break
 
-        start_set = self.url_header_proxy.copy()
+        start_set: dict = self.url_header_proxy.copy()
+
         return start_set
 
-    def build_start_urls_list(self, urls_from_main_page: list):
+    def build_start_urls_list(self, urls_from_main_page: list) -> list:
         self.urls_list.clear()
         to_by_turns = list(map(lambda e: (e, self.get_main_page_url()[0]), urls_from_main_page))
         by_turns_list_urls = [url for tup_set in to_by_turns for url in tup_set]
         by_turns_list_urls.reverse()
 
-        last_urls = self.get_main_page_url() + self.get_main_category_endpoint() + [
+        last_urls: list = self.get_main_page_url() + self.get_main_category_endpoint() + [
             self.get_main_category_endpoint()[0]
             + self.page_filters[0]
         ]
 
         by_turns_list_urls.extend(last_urls)
         self.urls_list.append(by_turns_list_urls)
+
         return self.urls_list
 
-    def build_page_range_list(self, number_of_pages: int):
+    def build_page_range_list(self, number_of_pages: int) -> list:
         self.main_pages_creator.extend(
             self.get_main_category_endpoint()[0]
             + ''.join(part_url for part_url in self.page_filters)
-            + str(number) for number in range(number_of_pages + 1)
+            + str(number) for number in range(number_of_pages + 1) #heererererer
         )
+
         return self.main_pages_creator
 
-    def mix_advertises_pages(self, pages_range: list):
+    def mix_advertises_pages(self, pages_range: list) -> list:
         self.urls_list.clear()
         divided: float = len(pages_range) / len(self.proxies)
         fra, whole = math.modf(divided)
-        fractional = fra
+        fractional: float = fra
         main_pages: list = []
 
         for _ in range(len(self.proxies) + 1):
@@ -140,6 +149,7 @@ class RequestParameters:
 
         self.urls_list = self.urls_list[:-1] if self.urls_list[-1] == [] else self.urls_list
         random.shuffle(self.urls_list)
+
         return self.urls_list
 
     def set_settings_for_main_advertise_list(self, main_list_urls: list) -> dict:
@@ -159,7 +169,7 @@ class RequestParameters:
             )
         return self.url_header_proxy
 
-    def copy_settings_from_main_adverts_list(self, key: str, urls: list):
+    def copy_settings_from_main_adverts_list(self, key: str, urls: list) -> dict:
         self.single_list_links_settings = self.url_header_proxy[key].copy()
         self.single_list_links_settings['urls'] = urls
         self.single_list_links_settings = {f"{key}": self.single_list_links_settings}
@@ -167,14 +177,15 @@ class RequestParameters:
         return self.single_list_links_settings
 
     def add_all_single_adverts_links(self, dict_key: str, urls_settings: dict) -> dict:
-
         if dict_key in self.all_single_adverts_links:
             for i in urls_settings.get(dict_key).get('urls'):
                 self.all_single_adverts_links[dict_key]['urls'].append(i)
+
             return self.all_single_adverts_links
 
         while dict_key not in self.all_single_adverts_links:
             self.all_single_adverts_links.update(urls_settings)
+
         return self.all_single_adverts_links
 
     def balance_single_advert_request(self, urls_settings: dict) -> str:
@@ -183,33 +194,37 @@ class RequestParameters:
 
         if len(urls_settings) > 1:
 
-            parameters = [(k, len(v.get('urls'))) for k, v in urls_settings.items() if v.get('urls')]
-            dict_keys = [str_keys for n in [str(k) * v for k, v in parameters if v != 0] for str_keys in n]
+            parameters: list = [(k, len(v.get('urls'))) for k, v in urls_settings.items() if v.get('urls')]
+            dict_keys: list = [str_keys for n in [str(k) * v for k, v in parameters if v != 0] for str_keys in n]
 
             dict_key = random.choice(dict_keys)
             self.forbidden_key = dict_key
+
             return dict_key
 
         else:
             dict_key, _ = urls_settings.popitem()
             self.forbidden_key = dict_key
+
             return dict_key
 
-    def get_highest_number_of_links(self, main_pages: dict) -> str:
-        import wdb;
-        wdb.set_trace()
-        main_pages = [(k, len(v['urls'])) for k, v in main_pages.items()]
-        dict_key = max(main_pages, key=lambda k: k[1])[0]
+    @staticmethod
+    def get_highest_number_of_links(main_pages: dict) -> str:
+        main_pages: list = [(k, len(v['urls'])) for k, v in main_pages.items()]
+        dict_key: str = max(main_pages, key=lambda k: k[1])[0]
+
         return dict_key
 
-    def check_number_main_page_links(self, main_page_links: dict) -> bool:
+    @staticmethod
+    def check_number_main_page_links(main_page_links: dict) -> bool:
         for k, v in main_page_links.items():
             if len(v['urls']) > 0:
+
                 return True
+
         return False
 
     # def check_which_proxies_are_unused(self, main_advertise_urls):
-
 
 
 class UrlRequest:
@@ -218,7 +233,6 @@ class UrlRequest:
         self.request = Request
 
     def get_content(self, scrap_set):
-
         for key in scrap_set:
             session = self.session
             session.cookies.clear()
@@ -229,6 +243,7 @@ class UrlRequest:
                 prepped = session.prepare_request(request)
                 Event().wait(0.01)
                 response = session.send(prepped, proxies=scrap_set[key], timeout=10, stream=True)
+
                 yield response
                 response.close()
 
@@ -239,29 +254,29 @@ class UrlRequest:
         except IOError:
             session = self.session
 
-        for link in scrap_set['urls']:
-            Event().wait(0.01)
-            request = self.request('GET', link, headers=scrap_set['header'])
-            prepped = session.prepare_request(request)
-            response = session.send(prepped, proxies=scrap_set, timeout=10, stream=True)
+        link = scrap_set['urls'].pop(0)
+        Event().wait(0.01)
+        request = self.request('GET', link, headers=scrap_set['header'])
+        prepped = session.prepare_request(request)
+        Event().wait(0.01)
+        response = session.send(prepped, proxies=scrap_set, timeout=10, stream=True)
 
-            with open(f'sessions/session_{dict_key}.pkl', 'wb') as file:
-                pickle.dump(session, file)
+        with open(f'sessions/session_{dict_key}.pkl', 'wb') as file:
+            pickle.dump(session, file)
 
-            yield response
-            response.close()
-            break
+        yield response
+        response.close()
 
 
 class DataParser:
     def __init__(self, data: bytes):
         self.soup = BeautifulSoup(data, "lxml")
         self.advert_details: dict = {'Adres': None}
-        self.advert_stats: dict = {}
+        self.advert_stats = dict()
 
     def get_start_activity_urls_from_main_page(self) -> list:
         all_advert = self.soup.find('div', class_='section-content')
-        urls = []
+        urls = list()
 
         for container in all_advert.findAll('div', class_='section__container'):
             for section in container.findAll('div', class_=re.compile("section__ogl section__ogl")):
@@ -269,27 +284,29 @@ class DataParser:
                     url = [content.find('a')['href']]
                     urls.extend(url)
 
-        number = random.randrange(2, 4)
+        number = random.randrange(0, 1)
         random_urls = random.sample(urls, number)
 
         return random_urls
 
     def get_last_page_number(self) -> str:
         last_page_number = self.soup.find('a', class_='pages__controls__last')['data-page-number']
+
         return last_page_number
 
     def get_all_advertisements_links_from_main_pages(self, forbidden_urls: list, url: str) -> list:
-        urls: list = []
+        urls = list()
 
         while url not in forbidden_urls:
             for url in self.soup.findAll('a', class_='list__item__content__title__name link'):
                 urls.append(url['href'])
 
             return urls
+
         return urls
 
     def get_category_of_advertisement(self) -> dict:
-        advertise_category = 'None'
+        advertise_category: str = 'None'
 
         for z in self.soup.findAll('span', itemprop='name')[-1]:
             advertise_category: str = unidecode(z)
@@ -303,14 +320,13 @@ class DataParser:
 
         return self.advert_details
 
-    def get_advert_link(self, url):
+    def get_advert_link(self, url: str) -> dict:
         advert_link: str = url
         self.advert_details['Url'] = advert_link
 
         return self.advert_details
 
     def get_core_details(self) -> dict:
-
         for item in self.soup.findAll('div', class_='oglDetails panel'):
             for container in item.findAll('div', class_='oglField__container'):
 
@@ -340,8 +356,12 @@ class DataParser:
                         self.advert_details[name] += ' ' + unidecode(str(value).replace('\xa0', ''))
 
                 if name == 'Dodatkowe informacje':
-                    value = [unidecode(i) for value in container.findAll('ul', class_='oglFieldList') for i in
-                             value.get_text().split('\n') if i]
+                    value = [
+                        unidecode(i)
+                        for value in container.findAll('ul', class_='oglFieldList')
+                        for i in value.get_text().split('\n') if i
+                    ]
+
                     self.advert_details[name] = ', '.join(item for item in value)
 
                 if isinstance(value, str):

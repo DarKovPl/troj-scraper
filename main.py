@@ -3,15 +3,15 @@ from parsers import DataParser, UrlRequest, RequestParameters
 from threading import Event
 from datetime import datetime
 
-pages_range = []
-main_advertise_urls_with_settings = {}
-single_adverts_links = []
+pages_range = list()
+main_pages_urls_and_settings = dict()
+single_adverts_links = list()
 
 request_parameters = RequestParameters()
 
 
-def main():
-    urls = []
+def get_necessary_information():
+    urls = list()
 
     for page in UrlRequest().get_content(request_parameters.set_start_activity_settings_for_requests()):
 
@@ -21,36 +21,36 @@ def main():
                 urls.extend(request_parameters.build_start_urls_list(page_urls))
 
         elif page.url == request_parameters.get_main_category_endpoint()[0]:
-            last_page_number = 7  # DataParser(page.content).get_last_page_number()
+            last_page_number = 4  # DataParser(page.content).get_last_page_number()
             pages_range.extend(request_parameters.build_page_range_list(int(last_page_number)))
             mixed_advertises: list = request_parameters.mix_advertises_pages(pages_range)
 
             for i in range(len(request_parameters.proxies)):
                 urls[i].extend(mixed_advertises[i])
 
-            main_advertise_urls_with_settings.update(request_parameters.set_settings_for_main_advertise_list(urls))
+            main_pages_urls_and_settings.update(request_parameters.set_settings_for_main_advertise_list(urls))
 
             with open('links', 'a+') as file_1:
                 file_1.write('Start\n')
                 file_1.write(str(datetime.now())[:-7].replace('-', '_').replace(' ', '_'))
-                for i in main_advertise_urls_with_settings:
-                    for urls in main_advertise_urls_with_settings[i]['urls']:
+                for i in main_pages_urls_and_settings:
+                    for urls in main_pages_urls_and_settings[i]['urls']:
                         file_1.write(urls + '\n')
                     file_1.write('Stop\n' * 5)
 
 
-def main_2():
-    while len(main_advertise_urls_with_settings) > 0:
+def scrape_single_adverts():
+    while len(main_pages_urls_and_settings) > 0:
 
-        main_advertise_urls_with_settings_copy = main_advertise_urls_with_settings.copy()
-        for k, v in main_advertise_urls_with_settings_copy.items():
+        main_pages_urls_with_settings_copy: dict = main_pages_urls_and_settings.copy()
+        for k, v in main_pages_urls_with_settings_copy.items():
             if len(v['urls']) == 0:
-                del main_advertise_urls_with_settings[k]
+                del main_pages_urls_and_settings[k]
 
-        for dict_key in main_advertise_urls_with_settings:
+        for dict_key in main_pages_urls_and_settings:
 
             main_page_request = UrlRequest().get_content_2(
-                main_advertise_urls_with_settings[dict_key],
+                main_pages_urls_and_settings[dict_key],
                 dict_key
             )
 
@@ -73,29 +73,29 @@ def main_2():
 
             if len(single_adverts_links) != 0:
 
-                updated_single_adverts_links = request_parameters.copy_settings_from_main_adverts_list(
+                adverts_urls_with_settings: dict = request_parameters.copy_settings_from_main_adverts_list(
                     dict_key,
                     single_adverts_links.copy()
                 )
 
-                second_set_urls = request_parameters.add_all_single_adverts_links(dict_key,
-                                                                                  updated_single_adverts_links
-                                                                                  )
+                advert_urls_to_scrap: dict = request_parameters.add_all_single_adverts_links(
+                    dict_key,
+                    adverts_urls_with_settings.copy()
+                )
 
                 single_adverts_links.clear()
-                main_advertise_urls_with_settings[dict_key]['urls'].pop(0)
 
-                if len(second_set_urls) >= len(main_advertise_urls_with_settings):
-                    while len(second_set_urls) != 0:
+                if len(advert_urls_to_scrap) >= len(main_pages_urls_and_settings):
+                    while len(advert_urls_to_scrap) != 0:
 
-                        page_2 = UrlRequest().get_content_2(second_set_urls[dict_key], dict_key)
-                        page_2 = next(page_2)
+                        advert_page = UrlRequest().get_content_2(advert_urls_to_scrap[dict_key], dict_key)
+                        advert_page = next(advert_page)
                         Event().wait(3)
 
-                        content = DataParser(page_2.content)
+                        content = DataParser(advert_page.content)
                         content.get_category_of_advertisement()
                         content.get_advert_title()
-                        content.get_advert_link(page_2.url)
+                        content.get_advert_link(advert_page.url)
                         content.get_advert_stats()
                         content.get_advert_description()
 
@@ -114,39 +114,31 @@ def main_2():
                             file.writelines(str(advert_details) + '\n')
                             file.write('*' * 30 + '\n')
 
-                        second_set_urls[dict_key]['urls'].pop(0)
-
-                        if len(second_set_urls[dict_key]['urls']) == 0:
+                        if len(advert_urls_to_scrap[dict_key]['urls']) == 0:
                             import wdb;
                             wdb.set_trace()
-                            del second_set_urls[dict_key]
+                            del advert_urls_to_scrap[dict_key]
 
                         condition: bool = request_parameters.check_number_main_page_links(
-                            main_advertise_urls_with_settings
+                            main_pages_urls_and_settings
                         )
 
-                        if len(second_set_urls) <= 1 and condition is True:
+                        if len(advert_urls_to_scrap) <= 1 and condition is True:
                             import wdb;
                             wdb.set_trace()
-                            main_pages = main_advertise_urls_with_settings.copy()
-                            dict_key = request_parameters.get_highest_number_of_links(
-                                main_pages
+                            dict_key: str = request_parameters.get_highest_number_of_links(
+                                main_pages_urls_and_settings.copy()  # order dict here
                             )
                             break
 
-                        elif len(second_set_urls) <= 1 and condition is False:
+                        elif len(advert_urls_to_scrap) <= 1 and condition is False:
                             Event().wait(10)
 
-                        if len(second_set_urls) > 0:
-                            urls_settings = second_set_urls.copy()
-                            dict_key = request_parameters.balance_single_advert_request(urls_settings)
-
-            else:
-                if len(main_advertise_urls_with_settings[dict_key]['urls']) != 0:
-                    main_advertise_urls_with_settings[dict_key]['urls'].pop(0)
+                        if len(advert_urls_to_scrap) > 0:
+                            dict_key: str = request_parameters.balance_single_advert_request(advert_urls_to_scrap.copy())
 
 
 if __name__ == '__main__':
-    main()
-    main_2()
+    get_necessary_information()
+    scrape_single_adverts()
 # import wdb; wdb.set_trace()
