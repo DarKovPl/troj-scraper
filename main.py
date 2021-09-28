@@ -2,6 +2,7 @@ import orm
 from parsers import DataParser, UrlRequest, RequestParameters
 from threading import Event
 from datetime import datetime
+from collections import OrderedDict
 
 pages_range = list()
 main_pages_urls_and_settings = dict()
@@ -40,14 +41,21 @@ def get_necessary_information():
 
 
 def scrape_single_adverts():
+    order_dict_key: str = ''
+
     while len(main_pages_urls_and_settings) > 0:
 
-        main_pages_urls_with_settings_copy: dict = main_pages_urls_and_settings.copy()
-        for k, v in main_pages_urls_with_settings_copy.items():
+        main_pages_urls_and_settings_copy: dict = main_pages_urls_and_settings.copy()
+        for k, v in main_pages_urls_and_settings_copy.items():
             if len(v['urls']) == 0:
                 del main_pages_urls_and_settings[k]
 
-        for dict_key in main_pages_urls_and_settings:
+        ordered_dict = OrderedDict(main_pages_urls_and_settings)
+        if order_dict_key != '':
+            ordered_dict.move_to_end(order_dict_key, last=False)
+
+        for dict_key in ordered_dict if order_dict_key != '' else main_pages_urls_and_settings:
+            order_dict_key = ''
 
             main_page_request = UrlRequest().get_content_2(
                 main_pages_urls_and_settings[dict_key],
@@ -126,8 +134,8 @@ def scrape_single_adverts():
                         if len(advert_urls_to_scrap) <= 1 and condition is True:
                             import wdb;
                             wdb.set_trace()
-                            dict_key: str = request_parameters.get_highest_number_of_links(
-                                main_pages_urls_and_settings.copy()  # order dict here
+                            order_dict_key = request_parameters.get_highest_number_of_links(
+                                main_pages_urls_and_settings.copy()
                             )
                             break
 
@@ -135,7 +143,8 @@ def scrape_single_adverts():
                             Event().wait(10)
 
                         if len(advert_urls_to_scrap) > 0:
-                            dict_key: str = request_parameters.balance_single_advert_request(advert_urls_to_scrap.copy())
+                            dict_key: str = request_parameters.balance_single_advert_request(
+                                advert_urls_to_scrap.copy())
 
 
 if __name__ == '__main__':
