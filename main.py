@@ -1,5 +1,5 @@
 import orm
-from parsers import DataParser, UrlRequest, RequestParameters
+from parsers import DataParser, UrlRequest, RequestParameters, WorkLogs
 from threading import Event
 from datetime import datetime
 from collections import OrderedDict
@@ -22,7 +22,7 @@ def get_necessary_information():
                 urls.extend(request_parameters.build_start_urls_list(page_urls))
 
         elif page.url == request_parameters.get_main_category_endpoint()[0]:
-            last_page_number = 4  # DataParser(page.content).get_last_page_number()
+            last_page_number = 7  # DataParser(page.content).get_last_page_number()
             pages_range.extend(request_parameters.build_page_range_list(int(last_page_number)))
             mixed_advertises: list = request_parameters.mix_advertises_pages(pages_range)
 
@@ -31,13 +31,7 @@ def get_necessary_information():
 
             main_pages_urls_and_settings.update(request_parameters.set_settings_for_main_advertise_list(urls))
 
-            with open('links', 'a+') as file_1:
-                file_1.write('Start\n')
-                file_1.write(str(datetime.now())[:-7].replace('-', '_').replace(' ', '_'))
-                for i in main_pages_urls_and_settings:
-                    for urls in main_pages_urls_and_settings[i]['urls']:
-                        file_1.write(urls + '\n')
-                    file_1.write('Stop\n' * 5)
+            WorkLogs().write_main_page_urls_with_settings_inf(main_pages_urls_and_settings)
 
 
 def scrape_single_adverts():
@@ -65,12 +59,7 @@ def scrape_single_adverts():
             main_page_request = next(main_page_request)
             Event().wait(3)
 
-            with open('main_pages_information', 'a+') as file:
-                file.write('Start\n')
-                file.writelines(str(main_page_request.url) + '\n')
-                file.writelines(str(main_page_request.headers) + '\n')
-                file.writelines(str(main_page_request.request.headers) + '\n')
-                file.write('Stop\t' * 5 + '\n')
+            WorkLogs().write_request_details(main_page_request)
 
             single_adverts_links.extend(
                 DataParser(main_page_request.content).get_all_advertisements_links_from_main_pages(
@@ -117,10 +106,7 @@ def scrape_single_adverts():
                         print(advert_details)
                         print('*' * 80)
 
-                        with open('core_deatails', 'a+') as file:
-                            file.write(str(datetime.now())[:-7].replace('-', '_').replace(' ', '_') + '\n')
-                            file.writelines(str(advert_details) + '\n')
-                            file.write('*' * 30 + '\n')
+                        WorkLogs().write_advert_details(advert_details)
 
                         if len(advert_urls_to_scrap[dict_key]['urls']) == 0:
                             import wdb;
@@ -132,8 +118,6 @@ def scrape_single_adverts():
                         )
 
                         if len(advert_urls_to_scrap) <= 1 and condition is True:
-                            import wdb;
-                            wdb.set_trace()
                             order_dict_key = request_parameters.get_highest_number_of_links(
                                 main_pages_urls_and_settings.copy()
                             )

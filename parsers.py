@@ -9,6 +9,7 @@ from unidecode import unidecode
 import math
 import re
 import random
+from datetime import datetime
 
 
 class RequestParameters:
@@ -117,7 +118,7 @@ class RequestParameters:
         self.main_pages_creator.extend(
             self.get_main_category_endpoint()[0]
             + ''.join(part_url for part_url in self.page_filters)
-            + str(number) for number in range(number_of_pages + 1) #heererererer
+            + str(number) for number in range(number_of_pages + 1)  # heererererer
         )
 
         return self.main_pages_creator
@@ -219,7 +220,6 @@ class RequestParameters:
     def check_number_main_page_links(main_page_links: dict) -> bool:
         for k, v in main_page_links.items():
             if len(v['urls']) > 0:
-
                 return True
 
         return False
@@ -397,3 +397,37 @@ class DataParser:
         self.advert_details['Description'] = description
 
         return self.advert_details
+
+
+class WorkLogs:
+
+    def __init__(self):
+        self.datetime_now_RR_MM_DD_HHMMSS = str(datetime.now())[:-7].replace('-', '_').replace(' ', '_')
+        self.datetime_now_RR_MM_DD = str(datetime.now())[:10].replace('-', '_').replace(' ', '_')
+
+    def write_main_page_urls_with_settings_inf(self, main_pages):
+        with open(f'main_pages_urls_{self.datetime_now_RR_MM_DD}.log', 'a+') as file:
+            file.write(self.datetime_now_RR_MM_DD_HHMMSS + '\n')
+            file.write(f'Start ' + '\n')
+            for i in main_pages:
+                file.write(f'Key of the dict: {i}' + '\n')
+                file.write(str(main_pages[i]['header']) + '\n')
+                file.write(str(main_pages[i]['https']) + '\n')
+                for urls in main_pages[i]['urls']:
+                    file.write(urls + '\n')
+                file.write('Stop  ' * 30 + '\n')
+
+    def write_request_details(self, request):
+        with open(f'request_information_{self.datetime_now_RR_MM_DD}.log', 'a+') as file:
+            # file.write(f'Key of the dict: {request}' + '\n')
+            file.write(self.datetime_now_RR_MM_DD_HHMMSS + '\n')
+            file.writelines('Url: ' + str(request.url) + '\n')
+            file.writelines('Respond header: ' + str(request.headers) + '\n')
+            file.writelines('Request header: ' + str(request.request.headers) + '\n')
+            file.write('Stop\t' * 10 + '\n')
+
+    def write_advert_details(self, advert):
+        with open(f'advert_details_{self.datetime_now_RR_MM_DD}.log', 'a+') as file:
+            file.write(self.datetime_now_RR_MM_DD_HHMMSS + '\n')
+            file.writelines(str(advert) + '\n')
+            file.write('* ' * 30 + '\n')
