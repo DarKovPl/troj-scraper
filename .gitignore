@@ -147,3 +147,6 @@ static
 # My temporary file and directories
 proxy_file/
 temporary.py
+databases/
+logs/
+sessions/

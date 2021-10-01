@@ -1,5 +1,8 @@
+from request_parameters import RequestParameters
+from url_requests import UrlRequest
+from logs import WorkLogs
+from parsers import DataParser
 import orm
-from parsers import DataParser, UrlRequest, RequestParameters, WorkLogs
 from threading import Event
 from datetime import datetime
 from collections import OrderedDict
@@ -51,7 +54,7 @@ def scrape_single_adverts():
         for dict_key in ordered_dict if order_dict_key != '' else main_pages_urls_and_settings:
             order_dict_key = ''
 
-            main_page_request = UrlRequest().get_content_2(
+            main_page_request = UrlRequest().get_advert_content(
                 main_pages_urls_and_settings[dict_key],
                 dict_key
             )
@@ -59,7 +62,7 @@ def scrape_single_adverts():
             main_page_request = next(main_page_request)
             Event().wait(3)
 
-            WorkLogs().write_request_details(main_page_request)
+            WorkLogs().write_request_details(main_page_request, dict_key)
 
             single_adverts_links.extend(
                 DataParser(main_page_request.content).get_all_advertisements_links_from_main_pages(
@@ -85,7 +88,7 @@ def scrape_single_adverts():
                 if len(advert_urls_to_scrap) >= len(main_pages_urls_and_settings):
                     while len(advert_urls_to_scrap) != 0:
 
-                        advert_page = UrlRequest().get_content_2(advert_urls_to_scrap[dict_key], dict_key)
+                        advert_page = UrlRequest().get_advert_content(advert_urls_to_scrap[dict_key], dict_key)
                         advert_page = next(advert_page)
                         Event().wait(3)
 
@@ -100,7 +103,7 @@ def scrape_single_adverts():
                         advert_details.update(content.get_advert_stats())
                         advert_details['Date'] = datetime.now().isoformat(' ', 'seconds')
 
-                        add_advert = orm.TrojScrapperBase(**advert_details)
+                        add_advert = orm.ScrapperBase(**advert_details)
                         orm.session.add(add_advert)
                         orm.session.commit()
                         print(advert_details)
