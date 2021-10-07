@@ -1,31 +1,31 @@
+import requests.exceptions
 from request_parameters import RequestParameters
 from url_requests import UrlRequest
-from logs import WorkLogs
+from logs import WorkLogs, ErrorLogs
 from parsers import DataParser
 import orm
 from threading import Event
 from datetime import datetime
 from collections import OrderedDict
 
-pages_range = list()
 main_pages_urls_and_settings = dict()
-single_adverts_links = list()
-
 request_parameters = RequestParameters()
 
 
 def get_necessary_information():
     urls = list()
+    pages_range = list()
 
     for page in UrlRequest().get_content(request_parameters.set_start_activity_settings_for_requests()):
 
         if page.url == request_parameters.get_main_page_url()[0]:
             for _ in range(len(request_parameters.proxies)):
+                # try here for parser
                 page_urls = DataParser(page.content).get_start_activity_urls_from_main_page()
                 urls.extend(request_parameters.build_start_urls_list(page_urls))
 
         elif page.url == request_parameters.get_main_category_endpoint()[0]:
-            last_page_number = 7  # DataParser(page.content).get_last_page_number()
+            last_page_number = 1  # DataParser(page.content).get_last_page_number()
             pages_range.extend(request_parameters.build_page_range_list(int(last_page_number)))
             mixed_advertises: list = request_parameters.mix_advertises_pages(pages_range)
 
@@ -39,6 +39,7 @@ def get_necessary_information():
 
 def scrape_single_adverts():
     order_dict_key: str = ''
+    single_adverts_links = list()
 
     while len(main_pages_urls_and_settings) > 0:
 
@@ -62,7 +63,7 @@ def scrape_single_adverts():
             main_page_request = next(main_page_request)
             Event().wait(3)
 
-            WorkLogs().write_request_details(main_page_request, dict_key)
+            WorkLogs().write_main_pages_req_and_resp_inf(main_page_request, dict_key)
 
             single_adverts_links.extend(
                 DataParser(main_page_request.content).get_all_advertisements_links_from_main_pages(
@@ -88,10 +89,12 @@ def scrape_single_adverts():
                 if len(advert_urls_to_scrap) >= len(main_pages_urls_and_settings):
                     while len(advert_urls_to_scrap) != 0:
 
+                        WorkLogs().write_advert_req_inf(advert_urls_to_scrap, dict_key)
+
                         advert_page = UrlRequest().get_advert_content(advert_urls_to_scrap[dict_key], dict_key)
                         advert_page = next(advert_page)
                         Event().wait(3)
-
+                        # try here for parser
                         content = DataParser(advert_page.content)
                         content.get_category_of_advertisement()
                         content.get_advert_title()
@@ -108,8 +111,6 @@ def scrape_single_adverts():
                         orm.session.commit()
                         print(advert_details)
                         print('*' * 80)
-
-                        WorkLogs().write_advert_details(advert_details)
 
                         if len(advert_urls_to_scrap[dict_key]['urls']) == 0:
                             import wdb;
@@ -131,10 +132,18 @@ def scrape_single_adverts():
 
                         if len(advert_urls_to_scrap) > 0:
                             dict_key: str = request_parameters.balance_single_advert_request(
-                                advert_urls_to_scrap.copy())
+                                advert_urls_to_scrap.copy()
+                            )
 
 
 if __name__ == '__main__':
     get_necessary_information()
     scrape_single_adverts()
+    # except requests.exceptions.ProxyError as e:
+    #     ErrorLogs(e).proxy_error()
+    #
+    #     pass
+
+# except requests.exceptions.ConnectionError as e:
+#     raise ScrapperExceptions('Problem', e)
 # import wdb; wdb.set_trace()
