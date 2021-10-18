@@ -25,7 +25,7 @@ def get_necessary_information():
                 urls.extend(request_parameters.build_start_urls_list(page_urls))
 
         elif page.url == request_parameters.get_main_category_endpoint()[0]:
-            last_page_number = 1  # DataParser(page.content).get_last_page_number()
+            last_page_number = 40  # DataParser(page.content).get_last_page_number()
             pages_range.extend(request_parameters.build_page_range_list(int(last_page_number)))
             mixed_advertises: list = request_parameters.mix_advertises_pages(pages_range)
 
@@ -34,7 +34,7 @@ def get_necessary_information():
 
             main_pages_urls_and_settings.update(request_parameters.set_settings_for_main_advertise_list(urls))
 
-            WorkLogs().write_main_page_urls_with_settings_inf(main_pages_urls_and_settings)
+            WorkLogs(dict_with_settings=main_pages_urls_and_settings).write_main_page_urls_with_settings_inf()
 
 
 def scrape_single_adverts():
@@ -63,7 +63,7 @@ def scrape_single_adverts():
             main_page_request = next(main_page_request)
             Event().wait(3)
 
-            WorkLogs().write_main_pages_req_and_resp_inf(main_page_request, dict_key)
+            main_page_url = WorkLogs(request=main_page_request, dict_key=dict_key).write_main_pages_req_and_resp_inf()
 
             single_adverts_links.extend(
                 DataParser(main_page_request.content).get_all_advertisements_links_from_main_pages(
@@ -89,27 +89,35 @@ def scrape_single_adverts():
                 if len(advert_urls_to_scrap) >= len(main_pages_urls_and_settings):
                     while len(advert_urls_to_scrap) != 0:
 
-                        WorkLogs().write_advert_req_inf(advert_urls_to_scrap, dict_key)
+                        advert_url = WorkLogs(
+                            dict_with_settings=advert_urls_to_scrap,
+                            dict_key=dict_key
+                        ).write_advert_req_inf()
 
                         advert_page = UrlRequest().get_advert_content(advert_urls_to_scrap[dict_key], dict_key)
                         advert_page = next(advert_page)
                         Event().wait(3)
-                        # try here for parser
-                        content = DataParser(advert_page.content)
-                        content.get_category_of_advertisement()
-                        content.get_advert_title()
-                        content.get_advert_link(advert_page.url)
-                        content.get_advert_stats()
-                        content.get_advert_description()
+                        try:
+                            content = DataParser(advert_page.content)
+                            content.get_category_of_advertisement()
+                            content.get_advert_title()
+                            content.get_advert_link(advert_page.url)
+                            content.get_advert_stats()
+                            content.get_advert_description()
 
-                        advert_details: dict = content.get_core_details()
-                        advert_details.update(content.get_advert_stats())
-                        advert_details['Date'] = datetime.now().isoformat(' ', 'seconds')
-
-                        add_advert = orm.ScrapperBase(**advert_details)
-                        orm.session.add(add_advert)
-                        orm.session.commit()
-                        print(advert_details)
+                            advert_details: dict = content.get_core_details()
+                            advert_details.update(content.get_advert_stats())
+                            advert_details['Date'] = datetime.now().isoformat(' ', 'seconds')
+                            add_advert = orm.ScrapperBase(**advert_details)
+                            orm.session.add(add_advert)
+                            orm.session.commit()
+                            print(advert_details)
+                        except AttributeError as e:
+                            ErrorLogs(e).parser_error_log(advert_url)
+                            pass
+                        except TypeError as e:  #base erros
+                            ErrorLogs(e).database_error_log(advert_url)
+                            pass
                         print('*' * 80)
 
                         if len(advert_urls_to_scrap[dict_key]['urls']) == 0:
