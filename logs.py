@@ -43,7 +43,6 @@ class WorkLogs:
             file.write(f"Header: {self.dict_with_settings[self.dict_key]['header']}\n")
             file.write(f"Proxy: {self.dict_with_settings[self.dict_key]['https']}\n")
             file.write('* ' * 30 + '\n')
-        return advert_url
 
 
 class ErrorLogs(WorkLogs):
@@ -63,6 +62,12 @@ class ErrorLogs(WorkLogs):
 
     def database_error_log(self, advert_url):
         with open(f'{self.database_log_path}database_error_{self.datetime_now_RR_MM_DD}.log', 'a+') as file:
+            file.write(f'Time: {self.datetime_now_RR_MM_DD_HHMMSS}\n')
+            file.write(f'Advert url: {advert_url}\n')
+            file.write(f'Message:\n{self.exception_message}\n')
+
+    def request_error_log(self, advert_url):
+        with open(f'{self.request_log_path}request_error_{self.datetime_now_RR_MM_DD}.log', 'a+') as file:
             file.write(f'Time: {self.datetime_now_RR_MM_DD_HHMMSS}\n')
             file.write(f'Advert url: {advert_url}\n')
             file.write(f'Message:\n{self.exception_message}\n')

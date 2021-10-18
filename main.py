@@ -63,14 +63,22 @@ def scrape_single_adverts():
             main_page_request = next(main_page_request)
             Event().wait(3)
 
-            main_page_url = WorkLogs(request=main_page_request, dict_key=dict_key).write_main_pages_req_and_resp_inf()
+            WorkLogs(request=main_page_request, dict_key=dict_key).write_main_pages_req_and_resp_inf()
 
-            single_adverts_links.extend(
-                DataParser(main_page_request.content).get_all_advertisements_links_from_main_pages(
-                    request_parameters.get_skippable_urls(),
-                    main_page_request.url
+            try:
+                single_adverts_links.extend(
+                    DataParser(main_page_request.content).get_all_advertisements_links_from_main_pages(
+                        request_parameters.get_skippable_urls(),
+                        main_page_request.url
+                    )
                 )
-            )
+            except AttributeError as e:
+                ErrorLogs(e).parser_error_log(main_page_request.url)
+                continue
+
+            except Exception as e:
+                ErrorLogs(e).parser_error_log(main_page_request.url)
+                continue
 
             if len(single_adverts_links) != 0:
 
@@ -89,10 +97,7 @@ def scrape_single_adverts():
                 if len(advert_urls_to_scrap) >= len(main_pages_urls_and_settings):
                     while len(advert_urls_to_scrap) != 0:
 
-                        advert_url = WorkLogs(
-                            dict_with_settings=advert_urls_to_scrap,
-                            dict_key=dict_key
-                        ).write_advert_req_inf()
+                        WorkLogs(dict_with_settings=advert_urls_to_scrap, dict_key=dict_key).write_advert_req_inf()
 
                         advert_page = UrlRequest().get_advert_content(advert_urls_to_scrap[dict_key], dict_key)
                         advert_page = next(advert_page)
@@ -112,13 +117,17 @@ def scrape_single_adverts():
                             orm.session.add(add_advert)
                             orm.session.commit()
                             print(advert_details)
+                            print('*' * 80)
+
                         except AttributeError as e:
-                            ErrorLogs(e).parser_error_log(advert_url)
+                            ErrorLogs(e).parser_error_log(advert_page.url)
                             pass
                         except TypeError as e:  #base erros
-                            ErrorLogs(e).database_error_log(advert_url)
+                            ErrorLogs(e).database_error_log(advert_page.url)
                             pass
-                        print('*' * 80)
+                        except Exception as e:
+                            ErrorLogs(e).parser_error_log(advert_page.url)
+                            pass
 
                         if len(advert_urls_to_scrap[dict_key]['urls']) == 0:
                             import wdb;
