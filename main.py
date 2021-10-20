@@ -25,7 +25,7 @@ def get_necessary_information():
                 urls.extend(request_parameters.build_start_urls_list(page_urls))
 
         elif page.url == request_parameters.get_main_category_endpoint()[0]:
-            last_page_number = 40  # DataParser(page.content).get_last_page_number()
+            last_page_number = 72  # DataParser(page.content).get_last_page_number()
             pages_range.extend(request_parameters.build_page_range_list(int(last_page_number)))
             mixed_advertises: list = request_parameters.mix_advertises_pages(pages_range)
 
@@ -61,7 +61,8 @@ def scrape_single_adverts():
             )
 
             main_page_request = next(main_page_request)
-            Event().wait(3)
+            if main_page_request is None:
+                continue
 
             WorkLogs(request=main_page_request, dict_key=dict_key).write_main_pages_req_and_resp_inf()
 
@@ -95,12 +96,20 @@ def scrape_single_adverts():
                 single_adverts_links.clear()
 
                 if len(advert_urls_to_scrap) >= len(main_pages_urls_and_settings):
+                    counter: int = 0
                     while len(advert_urls_to_scrap) != 0:
 
                         WorkLogs(dict_with_settings=advert_urls_to_scrap, dict_key=dict_key).write_advert_req_inf()
 
                         advert_page = UrlRequest().get_advert_content(advert_urls_to_scrap[dict_key], dict_key)
                         advert_page = next(advert_page)
+                        if advert_page is None:
+                            counter += 1
+                            if counter == 4:
+                                advert_urls_to_scrap[dict_key]['urls'].pop(0)
+                                counter = 0
+                            continue
+
                         Event().wait(3)
                         try:
                             content = DataParser(advert_page.content)
@@ -130,8 +139,8 @@ def scrape_single_adverts():
                             pass
 
                         if len(advert_urls_to_scrap[dict_key]['urls']) == 0:
-                            import wdb;
-                            wdb.set_trace()
+                            # import wdb;
+                            # wdb.set_trace()
                             del advert_urls_to_scrap[dict_key]
 
                         condition: bool = request_parameters.check_number_main_page_links(

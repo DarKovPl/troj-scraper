@@ -13,8 +13,7 @@ class UrlRequest:
         for key in scrap_set:
             session = self.session
             session.cookies.clear()
-            import wdb;
-            wdb.set_trace()
+
             for link in scrap_set[key]['urls']:
                 Event().wait(0.01)
                 request = self.request('GET', link, headers=scrap_set[key]['header'])
@@ -53,10 +52,27 @@ class UrlRequest:
         request = self.request('GET', link, headers=scrap_set['header'])
         prepped = session.prepare_request(request)
         Event().wait(0.01)
-        response = session.send(prepped, proxies=scrap_set, timeout=10, stream=True)
+        try:
+            response = session.send(prepped, proxies=scrap_set, timeout=10, stream=True)
 
-        with open(f'sessions/session_{dict_key}.pkl', 'wb') as file:
-            pickle.dump(session, file)
+            with open(f'sessions/session_{dict_key}.pkl', 'wb') as file:
+                pickle.dump(session, file)
 
-        yield response
-        response.close()
+            yield response
+            response.close()
+
+        except exceptions.ConnectionError as e:
+            ErrorLogs(e).request_error_log(link)
+            Event().wait(10)
+            scrap_set['urls'].insert(0, link)
+            yield None
+
+        except exceptions.ReadTimeout as e:
+            ErrorLogs(e).request_error_log(link)
+            Event().wait(10)
+            scrap_set['urls'].insert(0, link)
+            yield None
+
+        except Exception as e:
+            ErrorLogs(e).request_error_log(link)
+            yield None
