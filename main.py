@@ -1,7 +1,6 @@
-import requests.exceptions
 from request_parameters import RequestParameters
 from url_requests import UrlRequest
-from logs import WorkLogs, ErrorLogs
+from logs import WorkLogs, ErrorLogs, LogsStructureCreator
 from parsers import DataParser
 import orm
 from threading import Event
@@ -34,7 +33,7 @@ def get_necessary_information():
 
             main_pages_urls_and_settings.update(request_parameters.set_settings_for_main_advertise_list(urls))
 
-            WorkLogs(dict_with_settings=main_pages_urls_and_settings).write_main_page_urls_with_settings_inf()
+            WorkLogs(urls_with_settings=main_pages_urls_and_settings).write_main_page_urls_with_settings_inf()
 
 
 def scrape_single_adverts():
@@ -99,7 +98,7 @@ def scrape_single_adverts():
                     counter: int = 0
                     while len(advert_urls_to_scrap) != 0:
 
-                        WorkLogs(dict_with_settings=advert_urls_to_scrap, dict_key=dict_key).write_advert_req_inf()
+                        WorkLogs(urls_with_settings=advert_urls_to_scrap, dict_key=dict_key).write_advert_req_inf()
 
                         advert_page = UrlRequest().get_advert_content(advert_urls_to_scrap[dict_key], dict_key)
                         advert_page = next(advert_page)
@@ -163,6 +162,7 @@ def scrape_single_adverts():
 
 
 if __name__ == '__main__':
+    LogsStructureCreator().create_folder_structure()
     get_necessary_information()
     scrape_single_adverts()
     # except requests.exceptions.ProxyError as e:
