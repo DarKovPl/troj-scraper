@@ -2,6 +2,7 @@ from logs import ErrorLogs
 from requests import Session, Request, exceptions
 from threading import Event
 import pickle
+import traceback
 
 
 class UrlRequest:
@@ -25,19 +26,19 @@ class UrlRequest:
                     response.close()
 
                 except exceptions.ConnectionError as e:
-                    ErrorLogs(e).request_error_log(link)
+                    ErrorLogs(f'{e}\n{traceback.format_exc()}').request_error_log(link)
                     Event().wait(10)
                     scrap_set[key]['urls'].insert(0, scrap_set[key]['urls'][scrap_set[key]['urls'].index(link)])
                     pass
 
                 except exceptions.ReadTimeout as e:
-                    ErrorLogs(e).request_error_log(link)
+                    ErrorLogs(f'{e}\n{traceback.format_exc()}').request_error_log(link)
                     Event().wait(10)
                     scrap_set[key]['urls'].insert(0, scrap_set[key]['urls'][scrap_set[key]['urls'].index(link)])
                     pass
 
                 except Exception as e:
-                    ErrorLogs(e).request_error_log(link)
+                    ErrorLogs(f'{e}\n{traceback.format_exc()}').request_error_log(link)
                     continue
 
     def get_advert_content(self, scrap_set, dict_key):
@@ -62,17 +63,17 @@ class UrlRequest:
             response.close()
 
         except exceptions.ConnectionError as e:
-            ErrorLogs(e).request_error_log(link)
+            ErrorLogs(f'{e}\n{traceback.format_exc()}').request_error_log(link)
             Event().wait(10)
             scrap_set['urls'].insert(0, link)
             yield None
 
         except exceptions.ReadTimeout as e:
-            ErrorLogs(e).request_error_log(link)
+            ErrorLogs(f'{e}\n{traceback.format_exc()}').request_error_log(link)
             Event().wait(10)
             scrap_set['urls'].insert(0, link)
             yield None
 
         except Exception as e:
-            ErrorLogs(e).request_error_log(link)
+            ErrorLogs(f'{e}\n{traceback.format_exc()}').request_error_log(link)
             yield None

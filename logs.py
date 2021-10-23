@@ -5,22 +5,26 @@ import os
 file_date = str(datetime.now())[:10].replace('-', '_').replace(' ', '_')
 
 
-class LogsFolderStructure:
+class FolderStructure:
 
     def __init__(self):
         self.main_pages_settings_path = 'logs/work_logs/main_pages_urls/'
         self.main_pages_req_inf_path = 'logs/work_logs/main_pages_req_inf/'
         self.advert_inf_path = 'logs/work_logs/request_advert_inf/'
+        self.time_to_end = 'logs/work_logs/'
         self.parser_log_path = 'logs/error_logs/parser_error/'
         self.request_log_path = 'logs/error_logs/request_error/'
         self.database_log_path = 'logs/error_logs/database_error/'
+        self.databases_path = 'databases/'
+        self.sessions_path = 'sessions/'
+        self.proxy_path = 'proxy_file/'
 
 
-class LogsStructureCreator(LogsFolderStructure):
+class LogsStructureCreator(FolderStructure):
 
     def __init__(self):
         super().__init__()
-        self.folder_structure_instance = LogsFolderStructure()
+        self.folder_structure_instance = FolderStructure()
         self.datetime_now_RR_MM_DD_HHMMSS = str(datetime.now())[:-7].replace('-', '_').replace(' ', '_')
 
     def create_folder_structure(self):
@@ -48,7 +52,7 @@ class WorkLogs(LogsStructureCreator):
                 file.write(f"Proxy: {str(self.urls_with_settings[i]['https'])}\n")
                 for urls in self.urls_with_settings[i]['urls']:
                     file.write(urls + '\n')
-                file.write('Stop  ' * 30 + '\n')
+                file.write('Stop  ' * 50 + '\n')
 
     def write_main_pages_req_and_resp_inf(self):
         with open(f'{self.main_pages_req_inf_path}main_pages_req_inf_{file_date}.log', 'a+') as file:
@@ -67,8 +71,17 @@ class WorkLogs(LogsStructureCreator):
             file.write(f"Advert url: {advert_url}\n")
             file.write(f"Header: {self.urls_with_settings[self.dict_key]['header']}\n")
             file.write(f"Proxy: {self.urls_with_settings[self.dict_key]['https']}\n")
-            file.write('* ' * 30 + '\n')
+            file.write('* ' * 50 + '\n')
 
+    def measure_roughly_time_to_finish(self, time, adverts_figure):
+        import wdb;
+        wdb.set_trace()
+        path = f'{self.time_to_end}adverts_scrap_time.log'
+        with open(path, 'a+') as file:
+            file.write(f'{adverts_figure};{time}')
+
+        with open(path, 'r') as file:
+            file.readlines()
 
 class ErrorLogs(LogsStructureCreator):
 
@@ -80,16 +93,19 @@ class ErrorLogs(LogsStructureCreator):
         with open(f'{self.parser_log_path}parser_error_{file_date}.log', 'a+') as file:
             file.write(f'Time: {self.datetime_now_RR_MM_DD_HHMMSS}\n')
             file.write(f'Advert url: {advert_url}\n')
-            file.write(f'Message:\n{self.exception_message}\n')
+            file.write(f'Traceback Message:\n{self.exception_message}\n')
+            file.write('* ' * 50 + '\n')
 
     def database_error_log(self, advert_url):
         with open(f'{self.database_log_path}database_error_{file_date}.log', 'a+') as file:
             file.write(f'Time: {self.datetime_now_RR_MM_DD_HHMMSS}\n')
             file.write(f'Advert url: {advert_url}\n')
-            file.write(f'Message:\n{self.exception_message}\n')
+            file.write(f'Traceback Message:\n{self.exception_message}\n')
+            file.write('* ' * 50 + '\n')
 
     def request_error_log(self, advert_url):
         with open(f'{self.request_log_path}request_error_{file_date}.log', 'a+') as file:
             file.write(f'Time: {self.datetime_now_RR_MM_DD_HHMMSS}\n')
             file.write(f'Advert url: {advert_url}\n')
-            file.write(f'Message:\n{self.exception_message}\n')
+            file.write(f'Traceback Message:\n{self.exception_message}\n')
+            file.write('* ' * 50 + '\n')

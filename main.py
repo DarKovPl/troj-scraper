@@ -3,25 +3,48 @@ from url_requests import UrlRequest
 from logs import WorkLogs, ErrorLogs, LogsStructureCreator
 from parsers import DataParser
 import orm
+import traceback
 from threading import Event
 from datetime import datetime
 from collections import OrderedDict
-
+import time
 main_pages_urls_and_settings = dict()
+adverts_figure = list()
 request_parameters = RequestParameters()
 
 
+# def get_sequence_wrapper(function):
+#     def _wrapped_function(*args):
+#         time_start = time.time()
+#         result = function(*args)
+#         time_stop = time.time()
+#
+#         print(f'Function name: "{function.__name__}" and time of its work:'
+#               f' {time_stop - time_start}')
+#
+#         return result
+#
+#     return _wrapped_function
+# @get_sequence_wrapper
 def get_necessary_information():
     urls = list()
     pages_range = list()
 
     for page in UrlRequest().get_content(request_parameters.set_start_activity_settings_for_requests()):
-
         if page.url == request_parameters.get_main_page_url()[0]:
             for _ in range(len(request_parameters.proxies)):
-                # try here for parser
-                page_urls = DataParser(page.content).get_start_activity_urls_from_main_page()
-                urls.extend(request_parameters.build_start_urls_list(page_urls))
+                try:
+                    page_urls = DataParser(page.content).get_start_activity_urls_from_main_page()[0]
+                    adverts_figure.append(DataParser(page.content).get_start_activity_urls_from_main_page()[1])
+                    urls.extend(request_parameters.build_start_urls_list(page_urls))
+
+                except AttributeError as e:
+                    ErrorLogs(f'{e}\n{traceback.format_exc()}').parser_error_log(page.url)
+                    continue
+
+                except Exception as e:
+                    ErrorLogs(f'{e}\n{traceback.format_exc()}').parser_error_log(page.url)
+                    continue
 
         elif page.url == request_parameters.get_main_category_endpoint()[0]:
             last_page_number = 72  # DataParser(page.content).get_last_page_number()
@@ -73,11 +96,11 @@ def scrape_single_adverts():
                     )
                 )
             except AttributeError as e:
-                ErrorLogs(e).parser_error_log(main_page_request.url)
+                ErrorLogs(f'{e}\n{traceback.format_exc()}').parser_error_log(main_page_request.url)
                 continue
 
             except Exception as e:
-                ErrorLogs(e).parser_error_log(main_page_request.url)
+                ErrorLogs(f'{e}\n{traceback.format_exc()}').parser_error_log(main_page_request.url)
                 continue
 
             if len(single_adverts_links) != 0:
@@ -124,17 +147,18 @@ def scrape_single_adverts():
                             add_advert = orm.ScrapperBase(**advert_details)
                             orm.session.add(add_advert)
                             orm.session.commit()
+                            WorkLogs().measure_roughly_time_to_finish(advert_details['Date'], adverts_figure)
                             print(advert_details)
                             print('*' * 80)
 
                         except AttributeError as e:
-                            ErrorLogs(e).parser_error_log(advert_page.url)
+                            ErrorLogs(f'{e}\n{traceback.format_exc()}').parser_error_log(advert_page.url)
                             pass
                         except TypeError as e:  #base erros
-                            ErrorLogs(e).database_error_log(advert_page.url)
+                            ErrorLogs(f'{e}\n{traceback.format_exc()}').database_error_log(advert_page.url)
                             pass
                         except Exception as e:
-                            ErrorLogs(e).parser_error_log(advert_page.url)
+                            ErrorLogs(f'{e}\n{traceback.format_exc()}').parser_error_log(advert_page.url)
                             pass
 
                         if len(advert_urls_to_scrap[dict_key]['urls']) == 0:
@@ -165,11 +189,3 @@ if __name__ == '__main__':
     LogsStructureCreator().create_folder_structure()
     get_necessary_information()
     scrape_single_adverts()
-    # except requests.exceptions.ProxyError as e:
-    #     ErrorLogs(e).proxy_error()
-    #
-    #     pass
-
-# except requests.exceptions.ConnectionError as e:
-#     raise ScrapperExceptions('Problem', e)
-# import wdb; wdb.set_trace()
