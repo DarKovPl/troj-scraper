@@ -10,10 +10,7 @@ class DataParser:
         self.advert_details: dict = {'Adres': None}
         self.advert_stats = dict()
 
-    def get_start_activity_urls_from_main_page(self) -> tuple:
-        adverts_figure = self.soup.find('h1', class_='title').findNext().text
-        figure = re.findall(r'\b\d+\b', adverts_figure)[0]
-
+    def get_start_activity_urls_from_main_page(self) -> list:
         all_advert = self.soup.find('div', class_='section-content')
         urls = list()
 
@@ -23,10 +20,10 @@ class DataParser:
                     url = [content.find('a')['href']]
                     urls.extend(url)
 
-        number = random.randrange(0, 3)
+        number = random.randrange(0, 4)
         random_urls = random.sample(urls, number)
 
-        return random_urls, figure
+        return random_urls
 
     def get_last_page_number(self) -> str:
         last_page_number = self.soup.find('a', class_='pages__controls__last')['data-page-number']

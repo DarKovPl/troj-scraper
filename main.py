@@ -9,7 +9,6 @@ from datetime import datetime
 from collections import OrderedDict
 import time
 main_pages_urls_and_settings = dict()
-adverts_figure = list()
 request_parameters = RequestParameters()
 
 
@@ -34,8 +33,7 @@ def get_necessary_information():
         if page.url == request_parameters.get_main_page_url()[0]:
             for _ in range(len(request_parameters.proxies)):
                 try:
-                    page_urls = DataParser(page.content).get_start_activity_urls_from_main_page()[0]
-                    adverts_figure.append(DataParser(page.content).get_start_activity_urls_from_main_page()[1])
+                    page_urls = DataParser(page.content).get_start_activity_urls_from_main_page()
                     urls.extend(request_parameters.build_start_urls_list(page_urls))
 
                 except AttributeError as e:
@@ -48,6 +46,7 @@ def get_necessary_information():
 
         elif page.url == request_parameters.get_main_category_endpoint()[0]:
             last_page_number = 72  # DataParser(page.content).get_last_page_number()
+            WorkLogs().measure_roughly_time_to_finish(2, int(last_page_number) * 30)
             pages_range.extend(request_parameters.build_page_range_list(int(last_page_number)))
             mixed_advertises: list = request_parameters.mix_advertises_pages(pages_range)
 
@@ -147,7 +146,7 @@ def scrape_single_adverts():
                             add_advert = orm.ScrapperBase(**advert_details)
                             orm.session.add(add_advert)
                             orm.session.commit()
-                            WorkLogs().measure_roughly_time_to_finish(advert_details['Date'], adverts_figure)
+                            WorkLogs().measure_roughly_time_to_finish(2)
                             print(advert_details)
                             print('*' * 80)
 
