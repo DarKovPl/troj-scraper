@@ -7,24 +7,11 @@ import traceback
 from threading import Event
 from datetime import datetime
 from collections import OrderedDict
-import time
+
 main_pages_urls_and_settings = dict()
 request_parameters = RequestParameters()
 
 
-# def get_sequence_wrapper(function):
-#     def _wrapped_function(*args):
-#         time_start = time.time()
-#         result = function(*args)
-#         time_stop = time.time()
-#
-#         print(f'Function name: "{function.__name__}" and time of its work:'
-#               f' {time_stop - time_start}')
-#
-#         return result
-#
-#     return _wrapped_function
-# @get_sequence_wrapper
 def get_necessary_information():
     urls = list()
     pages_range = list()
@@ -146,7 +133,7 @@ def scrape_single_adverts():
                             add_advert = orm.ScrapperBase(**advert_details)
                             orm.session.add(add_advert)
                             orm.session.commit()
-                            WorkLogs().measure_roughly_time_to_finish(2)
+                            WorkLogs().measure_roughly_time_to_finish(advert_details['Date'])
                             print(advert_details)
                             print('*' * 80)
 

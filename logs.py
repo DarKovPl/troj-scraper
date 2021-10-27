@@ -13,7 +13,7 @@ class FolderStructure:
         self.main_pages_settings_path = 'logs/work_logs/main_pages_urls/'
         self.main_pages_req_inf_path = 'logs/work_logs/main_pages_req_inf/'
         self.advert_inf_path = 'logs/work_logs/request_advert_inf/'
-        self.time_to_end_path = 'logs/work_logs/'
+        self.time_to_end_path = 'logs/'
         self.parser_log_path = 'logs/error_logs/parser_error/'
         self.request_log_path = 'logs/error_logs/request_error/'
         self.database_log_path = 'logs/error_logs/database_error/'
@@ -75,31 +75,40 @@ class WorkLogs(LogsStructureCreator):
             file.write(f"Proxy: {self.urls_with_settings[self.dict_key]['https']}\n")
             file.write('* ' * 50 + '\n')
 
-    def measure_roughly_time_to_finish(self, scrap_time=None, adverts_figure=None):
+    def measure_roughly_time_to_finish(self, advert_time=None, adverts_figure=None):
         import wdb;
         wdb.set_trace()
         if adverts_figure is not None:
-            time_divided = (adverts_figure * scrap_time) / 60 / 60
+
+            file_path = [i for i in os.listdir(self.time_to_end_path) if i.endswith('_.log')]
+            if file_path:
+                os.remove(os.path.join(self.time_to_end_path, file_path[0]))
+
+            time_divided = (adverts_figure * advert_time) / 60 / 60
             fra, whole = math.modf(time_divided)
-            time_to_end = f'{int(whole)}:{round(fra, 1) / 60}'
-            path = f'{self.time_to_end_path}to_end_{time_to_end}.log'
+            time_to_end = f'{int(whole)}:{int(round(fra, 3) * 60)}'
+            path = f'{self.time_to_end_path}to_end_{time_to_end}_.log'
 
             with open(path, 'a') as file:
-                file.write(f'{adverts_figure}')
+                file.write(f'{adverts_figure}\n{datetime.now().isoformat(" ", "seconds")}')
 
         else:
-            with open(os.listdir(self.time_to_end_path)[0], 'r') as file:
-                adverts_figure = int(file.readline())
-                adverts_figure -= 1
-                time_divided = (adverts_figure * scrap_time) / 60 / 60
-                fra, whole = math.modf(time_divided)
-                time_to_end = f'{whole}:{60 / round(fra, 1)}'
+            file_path = [i for i in os.listdir(self.time_to_end_path) if i.endswith('_.log')]
 
-            os.remove(os.listdir(self.time_to_end_path)[0])
-            path = f'{self.time_to_end_path}to_end_{time_to_end}.log'
+            with open(os.path.join(self.time_to_end_path, file_path[0]), 'r') as file:
+                lines = file.readlines()
+                adverts_figure = int(lines[0])
+                adverts_figure -= 1
+                scrap_time = datetime.now() - datetime.fromisoformat(lines[1])
+                time_divided = (adverts_figure * scrap_time.total_seconds()) / 60 / 60
+                fra, whole = math.modf(time_divided)
+                time_to_end = f'{int(whole)}:{int(round(fra, 3) * 60)}'
+
+            os.remove(os.path.join(self.time_to_end_path, file_path[0]))
+            path = f'{self.time_to_end_path}to_end_{time_to_end}_.log'
 
             with open(path, 'a') as file:
-                file.write(f'{adverts_figure}')
+                file.write(f'{adverts_figure}\n{advert_time}')
 
 
 class ErrorLogs(LogsStructureCreator):
