@@ -76,8 +76,6 @@ class WorkLogs(LogsStructureCreator):
             file.write('* ' * 50 + '\n')
 
     def measure_roughly_time_to_finish(self, advert_time=None, adverts_figure=None):
-        import wdb;
-        wdb.set_trace()
         if adverts_figure is not None:
 
             file_path = [i for i in os.listdir(self.time_to_end_path) if i.endswith('_.log')]
@@ -99,7 +97,7 @@ class WorkLogs(LogsStructureCreator):
                 lines = file.readlines()
                 adverts_figure = int(lines[0])
                 adverts_figure -= 1
-                scrap_time = datetime.now() - datetime.fromisoformat(lines[1])
+                scrap_time = datetime.now() - datetime.fromisoformat(lines[1].replace('\n', ''))
                 time_divided = (adverts_figure * scrap_time.total_seconds()) / 60 / 60
                 fra, whole = math.modf(time_divided)
                 time_to_end = f'{int(whole)}:{int(round(fra, 3) * 60)}'
@@ -108,7 +106,7 @@ class WorkLogs(LogsStructureCreator):
             path = f'{self.time_to_end_path}to_end_{time_to_end}_.log'
 
             with open(path, 'a') as file:
-                file.write(f'{adverts_figure}\n{advert_time}')
+                file.write(f'{adverts_figure}\n{advert_time}\n{scrap_time}')
 
 
 class ErrorLogs(LogsStructureCreator):

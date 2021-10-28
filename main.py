@@ -32,7 +32,7 @@ def get_necessary_information():
                     continue
 
         elif page.url == request_parameters.get_main_category_endpoint()[0]:
-            last_page_number = 72  # DataParser(page.content).get_last_page_number()
+            last_page_number = 7  # DataParser(page.content).get_last_page_number()
             WorkLogs().measure_roughly_time_to_finish(2, int(last_page_number) * 30)
             pages_range.extend(request_parameters.build_page_range_list(int(last_page_number)))
             mixed_advertises: list = request_parameters.mix_advertises_pages(pages_range)
@@ -118,7 +118,7 @@ def scrape_single_adverts():
                                 counter = 0
                             continue
 
-                        Event().wait(3)
+                        Event().wait(2)
                         try:
                             content = DataParser(advert_page.content)
                             content.get_category_of_advertisement()

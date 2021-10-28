@@ -119,24 +119,22 @@ class RequestParameters:
         self.urls_list.clear()
         divided: float = len(pages_range) / len(self.proxies)
         fra, whole = math.modf(divided)
-        fractional: float = fra
+        fractional: float = 0
         main_pages: list = []
 
         for _ in range(len(self.proxies) + 1):
-            for _ in range(0, int(whole) + 1):
+            for _ in range(int(whole) + 1):
                 if len(pages_range) > 0:
+                    if fractional > 1:
+                        fractional = 0
+                        continue
                     main_pages.append(pages_range.pop(0))
 
                 main_pages_copy = main_pages[1::2]
                 random.shuffle(main_pages_copy)
                 main_pages[1::2] = main_pages_copy
+                fractional += fra
 
-            if fractional > 1:
-                if len(pages_range) > 0:
-                    main_pages.append(pages_range.pop(0))
-                    fractional = fra
-
-            fractional += fra
             self.urls_list.append(main_pages.copy())
             main_pages.clear()
 
@@ -215,5 +213,3 @@ class RequestParameters:
                 return True
 
         return False
-
-    # def check_which_proxies_are_unused(self, main_advertise_urls):
