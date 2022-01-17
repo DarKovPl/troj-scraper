@@ -185,8 +185,8 @@ class RequestParameters:
 
         if len(urls_settings) > 1:
 
-            parameters: list = [(k, len(v.get('urls'))) for k, v in urls_settings.items() if v.get('urls')]
-            dict_keys: list = [str_keys for n in [str(k) * v for k, v in parameters if v != 0] for str_keys in n]
+            parameters: list = [([k] * len(v.get('urls'))) for k, v in urls_settings.items() if v.get('urls')]
+            dict_keys: list = [str_keys for n in [v for v in parameters if v != 0] for str_keys in n]
 
             dict_key = random.choice(dict_keys)
             self.forbidden_key = dict_key
