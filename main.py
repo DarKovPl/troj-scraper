@@ -1,6 +1,6 @@
 from request_parameters import RequestParameters
 from url_requests import UrlRequest
-from logs import WorkLogs, ErrorLogs, LogsStructureCreator
+from logs import WorkLogs, ErrorLogs, LogsStructureCreator, LogsAutoArchive
 from parsers import DataParser
 import orm
 import traceback
@@ -171,5 +171,7 @@ def scrape_single_adverts():
 
 if __name__ == '__main__':
     LogsStructureCreator().create_folder_structure()
+    LogsAutoArchive().delete_old_session_files()
+    LogsAutoArchive().check_and_archive_logs()
     get_necessary_information()
     scrape_single_adverts()

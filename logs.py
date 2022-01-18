@@ -1,8 +1,8 @@
 import os.path
 from datetime import datetime
 import os
+import glob
 import math
-
 
 file_date = str(datetime.now())[:10].replace('-', '_').replace(' ', '_')
 
@@ -135,3 +135,30 @@ class ErrorLogs(LogsStructureCreator):
             file.write(f'Advert url: {advert_url}\n')
             file.write(f'Traceback Message:\n{self.exception_message}\n')
             file.write('* ' * 50 + '\n')
+
+
+class LogsAutoArchive(LogsStructureCreator):
+
+    def __init__(self):
+        super().__init__()
+        self.folder_structure_instance = FolderStructure()
+        self.int_datetime_now_RR_MM_DD = int(str(datetime.now())[:-16].replace('-', '_').replace(' ', '_'))
+
+    def delete_old_session_files(self):
+        files = glob.glob(self.sessions_path + "*")
+        for file in files:
+            os.remove(file)
+
+    def check_and_archive_logs(self):
+        files: dict = {
+            item: [file for file in glob.glob(item + "*")] for item in vars(self.folder_structure_instance).values()
+        }
+
+        for key, value in files.items():
+            if (key != 'databases/') and (key != 'logs/') and (key != 'proxy_file/') and (key != 'sessions/'):
+                value.sort()
+
+                for item in value:
+                    item_date = int(item[-14:-4])
+                    if (self.int_datetime_now_RR_MM_DD - 14) >= item_date:
+                        os.replace(item, "archive/" + item)
