@@ -20,6 +20,7 @@ class FolderStructure:
         self.databases_path = 'databases/'
         self.sessions_path = 'sessions/'
         self.proxy_path = 'proxy_file/'
+        self.archive_path = 'archive/'
 
 
 class LogsStructureCreator(FolderStructure):
@@ -155,10 +156,11 @@ class LogsAutoArchive(LogsStructureCreator):
         }
 
         for key, value in files.items():
-            if (key != 'databases/') and (key != 'logs/') and (key != 'proxy_file/') and (key != 'sessions/'):
+            if (key != 'databases/') and (key != 'logs/') and (key != 'proxy_file/') and (
+                    key != 'sessions/') and (key != 'archive/'):
                 value.sort()
 
                 for item in value:
                     item_date = int(item[-14:-4])
                     if (self.int_datetime_now_RR_MM_DD - 14) >= item_date:
-                        os.replace(item, "archive/" + item)
+                        os.replace(item, self.archive_path + item)

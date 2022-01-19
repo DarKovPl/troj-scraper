@@ -6,7 +6,6 @@ import orm
 import traceback
 from threading import Event
 from datetime import datetime
-from collections import OrderedDict
 
 main_pages_urls_and_settings = dict()
 request_parameters = RequestParameters()
@@ -56,12 +55,11 @@ def scrape_single_adverts():
             if len(v['urls']) == 0:
                 del main_pages_urls_and_settings[k]
 
-        ordered_dict = OrderedDict(main_pages_urls_and_settings)
-        if order_dict_key != '':
-            ordered_dict.move_to_end(order_dict_key, last=False)
-
-        for dict_key in ordered_dict if order_dict_key != '' else main_pages_urls_and_settings:
-            order_dict_key = ''
+        for dict_key in main_pages_urls_and_settings:
+            if (order_dict_key != '') and (len(main_pages_urls_and_settings) > 2):
+                dict_key = request_parameters.get_highest_number_of_links(
+                    main_pages_urls_and_settings.copy()
+                )
 
             main_page_request = UrlRequest().get_advert_content(
                 main_pages_urls_and_settings[dict_key],
@@ -105,6 +103,8 @@ def scrape_single_adverts():
 
                 if len(advert_urls_to_scrap) >= len(main_pages_urls_and_settings):
                     counter: int = 0
+                    order_dict_key = ''
+
                     while len(advert_urls_to_scrap) != 0:
 
                         WorkLogs(urls_with_settings=advert_urls_to_scrap, dict_key=dict_key).write_advert_req_inf()
