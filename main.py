@@ -56,7 +56,7 @@ def scrape_single_adverts():
                 del main_pages_urls_and_settings[k]
 
         for dict_key in main_pages_urls_and_settings:
-            if (order_dict_key != '') and (len(main_pages_urls_and_settings) > 2):
+            if order_dict_key != '':
                 dict_key = request_parameters.get_highest_number_of_links(
                     main_pages_urls_and_settings.copy()
                 )
@@ -101,7 +101,11 @@ def scrape_single_adverts():
 
                 single_adverts_links.clear()
 
-                if len(advert_urls_to_scrap) >= len(main_pages_urls_and_settings):
+                condition: bool = request_parameters.check_number_main_page_links(
+                    main_pages_urls_and_settings
+                )
+
+                if (len(advert_urls_to_scrap) >= len(main_pages_urls_and_settings)) or condition is False:
                     counter: int = 0
                     order_dict_key = ''
 
