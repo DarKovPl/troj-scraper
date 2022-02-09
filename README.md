@@ -1,7 +1,6 @@
 ## Table of Contents
 1. [General Info](#general-info)
 2. [Technologies](#technologies)
-3. [Code Examples](#code-examples)
 ## General Info
 ***
 Application for collecting data about local estate market. Main feature is that if one module is replaced the app is able to collect data from different site.
