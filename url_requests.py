@@ -6,11 +6,21 @@ import traceback
 
 
 class UrlRequest:
+    """
+    This class is responsible for sending query to a web page through a proxy.
+    Class creates a session using requests module and session files using pickle module.
+    """
     def __init__(self):
         self.session = Session()
         self.request = Request
 
-    def get_content(self, scrap_set):
+    def get_content(self, scrap_set: dict):
+        """
+        This method gets content from main pages.
+
+        :param scrap_set: dictionary with a URLs settings
+        :return: response object with data from a web page
+        """
         for key in scrap_set:
             session = self.session
             session.cookies.clear()
@@ -41,7 +51,16 @@ class UrlRequest:
                     ErrorLogs(f'{e}\n{traceback.format_exc()}').request_error_log(link)
                     continue
 
-    def get_advert_content(self, scrap_set, dict_key):
+    def get_advert_content(self, scrap_set: dict, dict_key: str):
+        """
+        This method gets content from the right advertise pages.
+
+        :param scrap_set: dictionary with a URLs settings
+        :param dict_key: dict_key number
+        :return: response object with data from a web page
+
+        TODO: Generator in the except block is necessary?
+        """
         try:
             with open(f'sessions/session_{dict_key}.pkl', 'rb') as file:
                 session = pickle.load(file)
