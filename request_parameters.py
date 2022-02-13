@@ -109,7 +109,7 @@ class RequestParameters:
         This method picks one proxy from the proxies and creates a kit with unique settings for sending one request.
         From page is grabbing the last page number and other important data necessary to begin to collect data.
 
-        :return: dictionary with settings for "scanning" request
+        :return: dictionary with settings for first "scanning" request
         """
         for key in sorted(list(self.get_proxies_from_file())[1:], key=lambda x: random.random()):
             self.url_header_proxy.update(
