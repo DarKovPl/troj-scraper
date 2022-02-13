@@ -5,12 +5,21 @@ import random
 
 
 class DataParser:
+    """
+    This class is a parser and when we replace this module with another parser module we can
+    collect data from other website.
+    """
     def __init__(self, data: bytes):
         self.soup = BeautifulSoup(data, "lxml")
         self.advert_details: dict = {'Adres': None}
         self.advert_stats = dict()
 
     def get_start_activity_urls_from_main_page(self) -> list:
+        """
+        This method gets all advertise URLs from front page of the website and returns a random number of its.
+
+        :return: list of several advertisements, for building a fake activity
+        """
         all_advert = self.soup.find('div', class_='section-content')
         urls = list()
 
@@ -26,11 +35,23 @@ class DataParser:
         return random_urls
 
     def get_last_page_number(self) -> str:
+        """
+        This method gets a last page number from a website.
+
+        :return: last page number
+        """
         last_page_number = self.soup.find('a', class_='pages__controls__last')['data-page-number']
 
         return last_page_number
 
     def get_all_advertisements_links_from_main_pages(self, forbidden_urls: list, url: str) -> list:
+        """
+        This method gets the right URLs from the main pages.
+
+        :param forbidden_urls: list of URLs to pass
+        :param url: current main page URL
+        :return: list of the right URLs
+        """
         urls = list()
 
         while url not in forbidden_urls:
@@ -42,6 +63,11 @@ class DataParser:
         return urls
 
     def get_category_of_advertisement(self) -> dict:
+        """
+        This method gets a category of advertisement.
+
+        :return: dictionary with a category.
+        """
         advertise_category: str = 'None'
 
         for z in self.soup.findAll('span', itemprop='name')[-1]:
@@ -51,18 +77,34 @@ class DataParser:
         return self.advert_details
 
     def get_advert_title(self) -> dict:
+        """
+        This method gets title of advertisement.
+
+        :return: updated dictionary with a title
+        """
         advert_title: str = unidecode(self.soup.find('h1', class_='title').text)
         self.advert_details['Title'] = advert_title
 
         return self.advert_details
 
     def get_advert_link(self, url: str) -> dict:
+        """
+        This method gets a URL of an advertisement and place it into a dictionary for committing to a database.
+
+        :param url: advertise URL
+        :return: updated dictionary with a URL
+        """
         advert_link: str = url
         self.advert_details['Url'] = advert_link
 
         return self.advert_details
 
     def get_core_details(self) -> dict:
+        """
+        This method gets full particulars from advertisements.
+
+        :return: dictionary with advertisement details
+        """
         for item in self.soup.findAll('div', class_='oglDetails panel'):
             for container in item.findAll('div', class_='oglField__container'):
 
@@ -119,6 +161,11 @@ class DataParser:
         return self.advert_details
 
     def get_advert_stats(self) -> dict:
+        """
+        This method gets advertisement statistic information.
+
+        :return: dictionary with advert statistic information
+        """
         tag = self.soup.find('ul', class_='oglStats')
 
         for stats in tag.findAll('li'):
@@ -129,6 +176,12 @@ class DataParser:
         return self.advert_stats
 
     def get_advert_description(self) -> dict:
+        """
+        This method gets advertise description written by advertiser. This description will be analise in the another
+        application.
+
+        :return: dictionary with advert description
+        """
         description = self.soup.find('div', class_='ogl__description').get_text(strip=True)
         self.advert_details['Description'] = description
 

@@ -1,22 +1,26 @@
 from request_parameters import RequestParameters
 from url_requests import UrlRequest
-from logs import WorkLogs, ErrorLogs, LogsStructureCreator
+from logs import WorkLogs, ErrorLogs, LogsStructureCreator, LogsAutoArchive
 from parsers import DataParser
 import orm
 import traceback
 from threading import Event
 from datetime import datetime
-from collections import OrderedDict
 
 main_pages_urls_and_settings = dict()
 request_parameters = RequestParameters()
 
 
 def get_necessary_information():
+    """
+    This function in the first step gets necessary information from front page of the website,
+    like a set of unnecessary advertisement for building user's activity on the website for avoid a ban.
+    The second task for this function is to build a range of the main pages.
+    """
     urls = list()
     pages_range = list()
 
-    for page in UrlRequest().get_content(request_parameters.set_start_activity_settings_for_requests()):
+    for page in UrlRequest().get_content(request_parameters.set_start_activity_settings_for_request()):
         if page.url == request_parameters.get_main_page_url()[0]:
             for _ in range(len(request_parameters.proxies)):
                 try:
@@ -32,7 +36,7 @@ def get_necessary_information():
                     continue
 
         elif page.url == request_parameters.get_main_category_endpoint()[0]:
-            last_page_number = 7  # DataParser(page.content).get_last_page_number()
+            last_page_number = DataParser(page.content).get_last_page_number()
             WorkLogs().measure_roughly_time_to_finish(2, int(last_page_number) * 30)
             pages_range.extend(request_parameters.build_page_range_list(int(last_page_number)))
             mixed_advertises: list = request_parameters.mix_advertises_pages(pages_range)
@@ -46,6 +50,15 @@ def get_necessary_information():
 
 
 def scrape_single_adverts():
+    """
+    This function gets data from the advertises and insert this information to a database.
+    First step is to walk on the webpage for building a user's session history. Each proxy has its own user's unique
+    session history road. Second step is to collect data from the website. The proxies are rotated and the time between
+    requests is randomly chosen, but there is no chance to send a request from one proxy one by one. The third task of
+    this function is to save collected data to the database using ORM.
+
+    TODO: In the future this function will be divided in two smallest functions.
+    """
     order_dict_key: str = ''
     single_adverts_links = list()
 
@@ -56,12 +69,11 @@ def scrape_single_adverts():
             if len(v['urls']) == 0:
                 del main_pages_urls_and_settings[k]
 
-        ordered_dict = OrderedDict(main_pages_urls_and_settings)
-        if order_dict_key != '':
-            ordered_dict.move_to_end(order_dict_key, last=False)
-
-        for dict_key in ordered_dict if order_dict_key != '' else main_pages_urls_and_settings:
-            order_dict_key = ''
+        for dict_key in main_pages_urls_and_settings:
+            if order_dict_key != '':
+                dict_key = request_parameters.get_highest_number_of_links(
+                    main_pages_urls_and_settings.copy()
+                )
 
             main_page_request = UrlRequest().get_advert_content(
                 main_pages_urls_and_settings[dict_key],
@@ -103,8 +115,14 @@ def scrape_single_adverts():
 
                 single_adverts_links.clear()
 
-                if len(advert_urls_to_scrap) >= len(main_pages_urls_and_settings):
+                condition: bool = request_parameters.check_number_main_page_links(
+                    main_pages_urls_and_settings
+                )
+
+                if (len(advert_urls_to_scrap) >= len(main_pages_urls_and_settings)) or condition is False:
                     counter: int = 0
+                    order_dict_key = ''
+
                     while len(advert_urls_to_scrap) != 0:
 
                         WorkLogs(urls_with_settings=advert_urls_to_scrap, dict_key=dict_key).write_advert_req_inf()
@@ -118,7 +136,7 @@ def scrape_single_adverts():
                                 counter = 0
                             continue
 
-                        Event().wait(2)
+                        Event().wait(1)
                         try:
                             content = DataParser(advert_page.content)
                             content.get_category_of_advertisement()
@@ -140,7 +158,7 @@ def scrape_single_adverts():
                         except AttributeError as e:
                             ErrorLogs(f'{e}\n{traceback.format_exc()}').parser_error_log(advert_page.url)
                             pass
-                        except TypeError as e:  #base erros
+                        except TypeError as e:  # base errors
                             ErrorLogs(f'{e}\n{traceback.format_exc()}').database_error_log(advert_page.url)
                             pass
                         except Exception as e:
@@ -148,8 +166,6 @@ def scrape_single_adverts():
                             pass
 
                         if len(advert_urls_to_scrap[dict_key]['urls']) == 0:
-                            # import wdb;
-                            # wdb.set_trace()
                             del advert_urls_to_scrap[dict_key]
 
                         condition: bool = request_parameters.check_number_main_page_links(
@@ -173,5 +189,7 @@ def scrape_single_adverts():
 
 if __name__ == '__main__':
     LogsStructureCreator().create_folder_structure()
+    LogsAutoArchive().delete_old_session_files()
+    LogsAutoArchive().check_and_archive_logs()
     get_necessary_information()
     scrape_single_adverts()
