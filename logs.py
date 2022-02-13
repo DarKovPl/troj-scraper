@@ -8,7 +8,10 @@ file_date = str(datetime.now())[:10].replace('-', '_').replace(' ', '_')
 
 
 class FolderStructure:
-
+    """
+    This class provides a folder structure to the application. I am not using the os library to create folder paths on
+    other operating systems because I want to only use my app on the raspberry pi.
+    """
     def __init__(self):
         self.main_pages_settings_path = 'logs/work_logs/main_pages_urls/'
         self.main_pages_req_inf_path = 'logs/work_logs/main_pages_req_inf/'
@@ -24,7 +27,9 @@ class FolderStructure:
 
 
 class LogsStructureCreator(FolderStructure):
-
+    """
+    This class is responsible for creating folder structure to the application.
+    """
     def __init__(self):
         super().__init__()
         self.folder_structure_instance = FolderStructure()
@@ -38,6 +43,9 @@ class LogsStructureCreator(FolderStructure):
 
 
 class WorkLogs(LogsStructureCreator):
+    """
+    This class is responsible for creating and updating application workflow logs.
+    """
 
     def __init__(self, request=None, dict_key=None, urls_with_settings=None):
         super().__init__()
@@ -77,6 +85,13 @@ class WorkLogs(LogsStructureCreator):
             file.write('* ' * 50 + '\n')
 
     def measure_roughly_time_to_finish(self, advert_time=None, adverts_figure=None):
+        """
+        This method measure +/- time to finish work and update this information in the file name
+        for easy to check from console.
+
+        :param advert_time: time in seconds between one request and another
+        :param adverts_figure: number of all advertisements to collect
+        """
         if adverts_figure is not None:
 
             file_path = [i for i in os.listdir(self.time_to_end_path) if i.endswith('_.log')]
@@ -111,7 +126,9 @@ class WorkLogs(LogsStructureCreator):
 
 
 class ErrorLogs(LogsStructureCreator):
-
+    """
+    This class is responsible for creating and updating error application logs.
+    """
     def __init__(self, exception_message):
         super().__init__()
         self.exception_message = str(exception_message)
@@ -139,18 +156,26 @@ class ErrorLogs(LogsStructureCreator):
 
 
 class LogsAutoArchive(LogsStructureCreator):
-
+    """
+    This class is responsible for auto archive old logs files and session files.
+    """
     def __init__(self):
         super().__init__()
         self.folder_structure_instance = FolderStructure()
         self.int_datetime_now_RR_MM_DD = int(str(datetime.now())[:-16].replace('-', '_').replace(' ', '_'))
 
     def delete_old_session_files(self):
+        """
+        This method deletes old session files.
+        """
         files = glob.glob(self.sessions_path + "*")
         for file in files:
             os.remove(file)
 
     def check_and_archive_logs(self):
+        """
+        This method checks and archive old logs files.
+        """
         files: dict = {
             item: [file for file in glob.glob(item + "*")] for item in vars(self.folder_structure_instance).values()
         }

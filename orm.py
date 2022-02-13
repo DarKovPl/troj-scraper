@@ -6,6 +6,11 @@ from sqlalchemy.orm import sessionmaker
 from unidecode import unidecode
 from environs import Env
 
+"""
+This module is responsible for create database and for a saving data to a SQLite database. 
+Columns are creates from environment variables.  
+"""
+
 date_database = str(datetime.today().date()).replace('-', '_')
 database_path = f'databases/database_{date_database}.db'
 
