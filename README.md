@@ -3,7 +3,7 @@
 2. [Technologies](#technologies)
 ## General Info
 ***
-Application for collecting data about local estate market. Main feature is that if one module is replaced the app is able to collect data from different site.
+Application for collecting data about local estate market. The main feature is that if one module is replaced, the app is able to collect data from another site.
 ## Screenshot
 ![Python](https://duythanhcse.files.wordpress.com/2021/01/python.png)
 ![BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/10.1.jpg)
