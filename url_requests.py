@@ -10,6 +10,7 @@ class UrlRequest:
     This class is responsible for sending query to a web page through a proxy.
     Class creates a session using requests module and session files using pickle module.
     """
+
     def __init__(self):
         self.session = Session()
         self.request = Request

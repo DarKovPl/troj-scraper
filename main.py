@@ -2,6 +2,7 @@ from request_parameters import RequestParameters
 from url_requests import UrlRequest
 from logs import WorkLogs, ErrorLogs, LogsStructureCreator, LogsAutoArchive
 from parsers import DataParser
+from proxies import ProxyList
 import orm
 import traceback
 from threading import Event
@@ -191,5 +192,9 @@ if __name__ == '__main__':
     LogsStructureCreator().create_folder_structure()
     LogsAutoArchive().delete_old_session_files()
     LogsAutoArchive().check_and_archive_logs()
+
+    if ProxyList().check_refresh_date():
+        ProxyList().replace_proxies()
+
     get_necessary_information()
     scrape_single_adverts()
