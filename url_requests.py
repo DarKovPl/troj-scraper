@@ -20,7 +20,7 @@ class UrlRequest:
         This method gets content from main pages.
 
         :param scrap_set: dictionary with a URLs settings
-        :return: response object with data from a web page
+        :return: response object with data from a webpage
         """
         for key in scrap_set:
             session = self.session
@@ -58,9 +58,7 @@ class UrlRequest:
 
         :param scrap_set: dictionary with a URLs settings
         :param dict_key: dict_key number
-        :return: response object with data from a web page
-
-        TODO: Generator in the except block is necessary?
+        :return: response object with data from a webpage
         """
         try:
             with open(f'sessions/session_{dict_key}.pkl', 'rb') as file:
