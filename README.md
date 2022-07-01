@@ -7,7 +7,7 @@ Application for collecting data about local estate market. The main feature is t
 ## Screenshot
 ![Python](https://duythanhcse.files.wordpress.com/2021/01/python.png)
 ![BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/10.1.jpg)
-![Requests](https://docs.python-requests.org/pl/latest/_static/requests-sidebar.png)
+<img src=https://requests.readthedocs.io/en/latest/_static/requests-sidebar.png width="300" height="300">
 ![SQLite](https://www.recoveryandmanagement.com/wp-content/uploads/2017/04/repair-sql-lite-database-manually-sqlite-data-recovery.jpg)
 ## Technologies
 ***
